@@ -2,18 +2,19 @@ package models
 
 import (
 	"crypto/sha1"
+	"crypto/sha256"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"time"
 
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/satori/go.uuid"
 	"github.com/tectiv3/standardfile/db"
 )
 
-/*
-User is the user type
-*/
+//User is the user type
 type User struct {
 	Uuid        string `json:"uuid"`
 	Email       string `json:"email"`
@@ -25,6 +26,24 @@ type User struct {
 	pw_nonce    string
 	Created_at  time.Time `json:"created_at"`
 	Updated_at  time.Time `json:"updated_at"`
+}
+
+//UserClaims - jwt claims
+type UserClaims struct {
+	Uuid    string `json:"uuid"`
+	Pw_hash string `json:"pw_hash"`
+	jwt.StandardClaims
+}
+
+//SigningKey - export to routing
+var SigningKey = []byte{}
+
+func init() {
+	key := os.Getenv("SECRET_KEY_BASE")
+	if key == "" {
+		key = "qA6irmDikU6RkCM4V0cJiUJEROuCsqTa1esexI4aWedSv405v8lw4g1KB1nQVsSdCrcyRlKFdws4XPlsArWwv9y5Xr5Jtkb11w1NxKZabOUa7mxjeENuCs31Y1Ce49XH9kGMPe0ms7iV7e9F6WgnsPFGOlIA3CwfGyr12okas2EsDd71SbSnA0zJYjyxeCVCZJWISmLB"
+	}
+	SigningKey = []byte(key)
 }
 
 //Save - save current user into DB
@@ -51,6 +70,32 @@ func (u User) Exists() bool {
 //Login - logins user
 func (u User) Login() bool {
 	return true
+}
+
+//LoadByUUID - loads user info from DB
+func (u User) LoadByUUID(uuid string) bool {
+	return true
+}
+
+//CreateToken - will create JWT token
+func (u User) CreateToken() string {
+	claims := UserClaims{
+		u.Uuid,
+		u.Password,
+		jwt.StandardClaims{
+			IssuedAt: time.Now().Unix(),
+		},
+	}
+	log.Println(claims)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(SigningKey)
+
+	if err != nil {
+		log.Println("Error signing token", err)
+		return ""
+	}
+
+	return tokenString
 }
 
 func (u User) loadByEmail(email string) {
@@ -90,4 +135,11 @@ func (u User) GetParams(email string) interface{} {
 	params["pw_salt"] = strings.Replace(fmt.Sprintf("% x", sha1.Sum([]byte(salt))), " ", "", -1)
 
 	return params
+}
+
+//Validate - validates password from jwt
+func (u User) Validate(password string) bool {
+	// base64.URLEncoding.EncodeToString()
+	pw := strings.Replace(fmt.Sprintf("% x", sha256.Sum256([]byte(password))), " ", "", -1)
+	return pw != u.Password
 }
