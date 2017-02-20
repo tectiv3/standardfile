@@ -61,7 +61,11 @@ func NewUser() User {
 
 //Save - save current user into DB
 func (u *User) Save() error {
+	if u.Uuid != "" {
+		return fmt.Errorf("Trying to save existing user")
+	}
 	u.Uuid = uuid.NewV4().String()
+	u.Password = hash(u.Password)
 	u.Created_at = time.Now()
 	err := db.Query("INSERT INTO users (uuid, email, password, pw_func, pw_alg, pw_cost, pw_key_size, pw_nonce, created_at, updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)", u.Uuid, u.Email, u.Password, u.Pw_func, u.Pw_alg, u.Pw_cost, u.Pw_key_size, u.Pw_nonce, u.Created_at, u.Updated_at)
 	if err != nil {
@@ -72,9 +76,18 @@ func (u *User) Save() error {
 }
 
 //Update - update password
-func (u *User) Update(password string) {
-	u.Password = password
+func (u *User) Update(password string) error {
+	if u.Uuid == "" {
+		return fmt.Errorf("Unknown user")
+	}
+	u.Password = hash(password)
 	u.Updated_at = time.Now()
+	err := db.Query("UPDATE `users` SET `password`=? WHERE `uuid`=?", u.Password, u.Uuid)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
 }
 
 //Exists - checks if current user exists in DB
@@ -89,7 +102,12 @@ func (u User) Exists() bool {
 }
 
 //Login - logins user
-func (u User) Login() bool {
+func (u *User) Login() bool {
+	u.loadByEmailAndPassword(u.Email, u.Password)
+	if u.Uuid == "" {
+		log.Println("Invalid email or password")
+		return false
+	}
 	return true
 }
 
@@ -131,6 +149,13 @@ func (u *User) loadByEmail(email string) {
 	}
 }
 
+func (u *User) loadByEmailAndPassword(email, password string) {
+	_, err := db.SelectStruct("SELECT * FROM `users` WHERE `email`=? AND `password`=?", u, email, password)
+	if err != nil {
+		log.Println(err)
+	}
+}
+
 //GetParams returns auth parameters by email
 func (u User) GetParams(email string) interface{} {
 	u.loadByEmail(email)
@@ -152,6 +177,10 @@ func (u User) GetParams(email string) interface{} {
 //Validate - validates password from jwt
 func (u User) Validate(password string) bool {
 	// base64.URLEncoding.EncodeToString()
-	pw := strings.Replace(fmt.Sprintf("% x", sha256.Sum256([]byte(password))), " ", "", -1)
+	pw := hash(password)
 	return pw != u.Password
+}
+
+func hash(input string) string {
+	return strings.Replace(fmt.Sprintf("% x", sha256.Sum256([]byte(input))), " ", "", -1)
 }

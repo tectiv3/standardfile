@@ -66,28 +66,28 @@ func PostRegisterFunc(c *router.Control) {
 	err := parseRequest(c, &user)
 	if err != nil {
 		log.Println(err)
-		c.Code(422).Body(data{"errors": []string{err.Error()}})
+		c.Code(http.StatusUnprocessableEntity).Body(data{"errors": []string{err.Error()}})
 		return
 	}
 	if user.Email == "" || user.Password == "" {
 		log.Println("Empty email or password")
-		c.Code(422).Body(data{"errors": []string{"Unable to register."}})
+		c.Code(http.StatusUnprocessableEntity).Body(data{"errors": []string{"Unable to register."}})
 		return
 	}
 	if user.Exists() {
 		log.Println("Users exists")
-		c.Code(422).Body(data{"errors": []string{"Unable to register!"}})
+		c.Code(http.StatusUnprocessableEntity).Body(data{"errors": []string{"Unable to register!"}})
 		return
 	}
 	err = user.Save()
 	if err != nil {
 		log.Println(err)
-		c.Code(422).Body(data{"errors": []string{err.Error()}})
+		c.Code(http.StatusUnprocessableEntity).Body(data{"errors": []string{err.Error()}})
 		return
 	}
 	ok := user.Login()
 	if !ok {
-		c.Code(422).Body(data{"errors": []string{"Unable to register."}})
+		c.Code(http.StatusUnprocessableEntity).Body(data{"errors": []string{"Unable to register."}})
 		return
 	}
 	token := user.CreateToken()
@@ -100,7 +100,7 @@ func PostLoginFunc(c *router.Control) {
 	parseRequest(c, &user)
 	ok := user.Login()
 	if !ok {
-		c.Code(422).Body(data{"errors": []string{"Invalid email or password."}})
+		c.Code(http.StatusUnprocessableEntity).Body(data{"errors": []string{"Invalid email or password."}})
 	}
 	token := user.CreateToken()
 	c.Code(http.StatusAccepted).Body(data{"token": token, "user": user})
@@ -121,11 +121,16 @@ func PostSyncFunc(c *router.Control) {
 
 //GetParamsFunc - is the get auth parameters handler
 func GetParamsFunc(c *router.Control) {
-	var user = models.NewUser()
+	user, err := authenticateUser(c)
+	if err != nil {
+		log.Println(err)
+		c.Code(http.StatusUnauthorized).Body(data{"errors": []string{err.Error()}})
+		return
+	}
 	email := c.Request.FormValue("email")
 	if email == "" {
 		log.Println("Empty email")
-		c.Code(http.StatusUnauthorized).Body(data{"errors": []string{"Empty email"}})
+		c.Code(http.StatusUnprocessableEntity).Body(data{"errors": []string{"Empty email"}})
 		return
 	}
 	params := user.GetParams(email)
