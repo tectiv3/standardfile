@@ -110,19 +110,15 @@ func PostSyncFunc(c *router.Control) {
 func GetParamsFunc(c *router.Control) {
 	user, err := authenticateUser(c)
 	if err != nil {
-		log.Println(err)
-		c.Code(http.StatusUnauthorized).Body(data{"errors": []string{err.Error()}})
+		showError(c, err, http.StatusUnauthorized)
 		return
 	}
-	email := c.Request.FormValue("email")
-	if email == "" {
-		log.Println("Empty email")
-		c.Code(http.StatusUnprocessableEntity).Body(data{"errors": []string{"Empty email"}})
-		return
-	}
-	params := user.GetParams(email)
-	// parseRequest(c, &user)
-	// params := user.getParams()
+	// email := c.Request.FormValue("email")
+	// if email == "" {
+	// showError(c, fmt.Errorf("Empty email"), http.StatusUnauthorized)
+	// return
+	// }
+	params := user.GetParams("") // (email)
 	c.Code(200).Body(params)
 }
 
@@ -131,7 +127,7 @@ func authenticateUser(c *router.Control) (models.User, error) {
 
 	authHeaderParts := strings.Split(c.Request.Header.Get("Authorization"), " ")
 	if len(authHeaderParts) != 2 || strings.ToLower(authHeaderParts[0]) != "bearer" {
-		return user, fmt.Errorf("Authorization header format must be Bearer {token}")
+		return user, fmt.Errorf("Missing authorization header")
 	}
 
 	token, err := jwt.ParseWithClaims(authHeaderParts[1], &models.UserClaims{}, func(token *jwt.Token) (interface{}, error) {
