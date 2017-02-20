@@ -42,32 +42,53 @@ func ChangePassFunc(c *router.Control) {
 }
 
 //parseRequest - is an internal function to parse json from request into local struct
-func parseRequest(c *router.Control, value interface{}) {
+func parseRequest(c *router.Control, value interface{}) error {
 	r := c.Request
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
-		panic(err)
+		return err
 	}
 	if err := r.Body.Close(); err != nil {
-		panic(err)
+		return err
+	}
+	if len(body) == 0 {
+		return fmt.Errorf("Empty request")
 	}
 	if err := json.Unmarshal(body, &value); err != nil {
-		log.Println(err)
-		c.Code(422).Body(data{"errors": []string{err.Error()}})
+		return err
 	}
+	return nil
 }
 
 //PostRegisterFunc - is the registration handler
 func PostRegisterFunc(c *router.Control) {
-	var user models.User
-	parseRequest(c, &user)
-	if user.Exists() {
-		c.Code(422).Body(data{"errors": []string{"Unable to register!"}})
+	var user = models.NewUser()
+	err := parseRequest(c, &user)
+	if err != nil {
+		log.Println(err)
+		c.Code(422).Body(data{"errors": []string{err.Error()}})
+		return
 	}
-	user.Save()
+	if user.Email == "" || user.Password == "" {
+		log.Println("Empty email or password")
+		c.Code(422).Body(data{"errors": []string{"Unable to register."}})
+		return
+	}
+	if user.Exists() {
+		log.Println("Users exists")
+		c.Code(422).Body(data{"errors": []string{"Unable to register!"}})
+		return
+	}
+	err = user.Save()
+	if err != nil {
+		log.Println(err)
+		c.Code(422).Body(data{"errors": []string{err.Error()}})
+		return
+	}
 	ok := user.Login()
 	if !ok {
 		c.Code(422).Body(data{"errors": []string{"Unable to register."}})
+		return
 	}
 	token := user.CreateToken()
 	c.Code(http.StatusCreated).Body(data{"token": token, "user": user})
@@ -75,7 +96,7 @@ func PostRegisterFunc(c *router.Control) {
 
 //PostLoginFunc - is the login handler
 func PostLoginFunc(c *router.Control) {
-	var user models.User
+	var user = models.NewUser()
 	parseRequest(c, &user)
 	ok := user.Login()
 	if !ok {
@@ -90,7 +111,7 @@ func PostSyncFunc(c *router.Control) {
 	_, err := authenticateUser(c)
 	if err != nil {
 		log.Println(err)
-		c.Code(http.StatusUnauthorized).Body(data{"errors": []error{err}})
+		c.Code(http.StatusUnauthorized).Body(data{"errors": []string{err.Error()}})
 		return
 	}
 	var message string
@@ -100,15 +121,21 @@ func PostSyncFunc(c *router.Control) {
 
 //GetParamsFunc - is the get auth parameters handler
 func GetParamsFunc(c *router.Control) {
-	var user models.User
-	params := user.GetParams(c.Request.FormValue("email"))
+	var user = models.NewUser()
+	email := c.Request.FormValue("email")
+	if email == "" {
+		log.Println("Empty email")
+		c.Code(http.StatusUnauthorized).Body(data{"errors": []string{"Empty email"}})
+		return
+	}
+	params := user.GetParams(email)
 	// parseRequest(c, &user)
 	// params := user.getParams()
 	c.Code(200).Body(params)
 }
 
 func authenticateUser(c *router.Control) (models.User, error) {
-	var user models.User
+	var user = models.NewUser()
 
 	authHeaderParts := strings.Split(c.Request.Header.Get("Authorization"), " ")
 	if len(authHeaderParts) != 2 || strings.ToLower(authHeaderParts[0]) != "bearer" {
