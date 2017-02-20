@@ -59,19 +59,31 @@ func NewUser() User {
 	return user
 }
 
-//Save - save current user into DB
-func (u *User) Save() error {
+//save - save current user into DB
+func (u *User) save() error {
 	if u.Uuid != "" {
 		return fmt.Errorf("Trying to save existing user")
 	}
+
+	if u.Email == "" || u.Password == "" {
+		return fmt.Errorf("Empty email or password")
+	}
+
+	if u.Exists() {
+		return fmt.Errorf("Unable to register")
+	}
+
 	u.Uuid = uuid.NewV4().String()
-	u.Password = hash(u.Password)
+	u.Password = Hash(u.Password)
 	u.Created_at = time.Now()
+
 	err := db.Query("INSERT INTO users (uuid, email, password, pw_func, pw_alg, pw_cost, pw_key_size, pw_nonce, created_at, updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)", u.Uuid, u.Email, u.Password, u.Pw_func, u.Pw_alg, u.Pw_cost, u.Pw_key_size, u.Pw_nonce, u.Created_at, u.Updated_at)
+
 	if err != nil {
 		log.Println(err)
 		return err
 	}
+
 	return nil
 }
 
@@ -80,35 +92,60 @@ func (u *User) Update(password string) error {
 	if u.Uuid == "" {
 		return fmt.Errorf("Unknown user")
 	}
-	u.Password = hash(password)
+
+	u.Password = Hash(password)
 	u.Updated_at = time.Now()
+
 	err := db.Query("UPDATE `users` SET `password`=? WHERE `uuid`=?", u.Password, u.Uuid)
 	if err != nil {
 		log.Println(err)
 		return err
 	}
+
 	return nil
+}
+
+//Register - creates user and returns token
+func (u *User) Register() (string, error) {
+	err := u.save()
+	if err != nil {
+		return "", err
+	}
+
+	token, err := u.Login(u.Email, u.Password)
+	if err != nil {
+		return "", fmt.Errorf("Registration failed")
+	}
+
+	return token, nil
 }
 
 //Exists - checks if current user exists in DB
 func (u User) Exists() bool {
 	uuid, err := db.SelectFirst("SELECT `uuid` FROM `users` WHERE `email`=?", u.Email)
+
 	if err != nil {
 		log.Println(err)
 		return false
 	}
-	log.Println(uuid)
+
 	return uuid != ""
 }
 
 //Login - logins user
-func (u *User) Login() bool {
-	u.loadByEmailAndPassword(u.Email, u.Password)
+func (u *User) Login(email, password string) (string, error) {
+	u.loadByEmailAndPassword(email, password)
+
 	if u.Uuid == "" {
-		log.Println("Invalid email or password")
-		return false
+		return "", fmt.Errorf("Invalid email or password")
 	}
-	return true
+
+	token, err := u.CreateToken()
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
 }
 
 //LoadByUUID - loads user info from DB
@@ -118,11 +155,12 @@ func (u *User) LoadByUUID(uuid string) bool {
 		log.Println(err)
 		return false
 	}
+
 	return true
 }
 
 //CreateToken - will create JWT token
-func (u User) CreateToken() string {
+func (u User) CreateToken() (string, error) {
 	claims := UserClaims{
 		u.Uuid,
 		u.Password,
@@ -130,16 +168,14 @@ func (u User) CreateToken() string {
 			IssuedAt: time.Now().Unix(),
 		},
 	}
-	log.Println(claims)
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(SigningKey)
-
 	if err != nil {
-		log.Println("Error signing token", err)
-		return ""
+		return "", err
 	}
 
-	return tokenString
+	return tokenString, nil
 }
 
 func (u *User) loadByEmail(email string) {
@@ -158,12 +194,15 @@ func (u *User) loadByEmailAndPassword(email, password string) {
 
 //GetParams returns auth parameters by email
 func (u User) GetParams(email string) interface{} {
-	u.loadByEmail(email)
+	// if u.Email != email {}
+	// u.loadByEmail(email)
+
 	params := map[string]string{}
 	params["pw_cost"] = strconv.Itoa(u.Pw_cost)
 	params["pw_alg"] = u.Pw_alg
 	params["pw_key_size"] = strconv.Itoa(u.Pw_key_size)
 	params["pw_func"] = u.Pw_func
+
 	var salt string
 	if u.Pw_nonce != "" {
 		salt = email + "SN" + u.Pw_nonce
@@ -171,13 +210,14 @@ func (u User) GetParams(email string) interface{} {
 		salt = email + "SN" + "a04a8fe6bcb19ba61c5c0873d391e987982fbbd4"
 	}
 	params["pw_salt"] = strings.Replace(fmt.Sprintf("% x", sha1.Sum([]byte(salt))), " ", "", -1)
+
 	return params
 }
 
 //Validate - validates password from jwt
 func (u User) Validate(password string) bool {
 	// base64.URLEncoding.EncodeToString()
-	pw := hash(password)
+	pw := Hash(password)
 	return pw != u.Password
 }
 
@@ -188,6 +228,7 @@ func (u User) ToJSON() interface{} {
 	return u
 }
 
-func hash(input string) string {
+//Hash - sha256 hash function
+func Hash(input string) string {
 	return strings.Replace(fmt.Sprintf("% x", sha256.Sum256([]byte(input))), " ", "", -1)
 }

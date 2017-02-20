@@ -17,12 +17,16 @@ import (
 
 type data map[string]interface{}
 
+func showError(c *router.Control, err error, code int) {
+	log.Println(err)
+	c.Code(code).Body(data{"errors": []string{err.Error()}})
+}
+
 //HandleRootFunc - is the root handler
 func HandleRootFunc(c *router.Control) {
 	user, err := authenticateUser(c)
 	if err != nil {
-		log.Println(err)
-		c.Code(http.StatusUnauthorized).Body(data{"errors": []string{err.Error()}})
+		showError(c, err, http.StatusUnauthorized)
 		return
 	}
 	c.UseTimer()
@@ -33,12 +37,13 @@ func HandleRootFunc(c *router.Control) {
 		},
 		"user": user.ToJSON(),
 	}
-	c.Code(200).Body(items)
+	c.Code(http.StatusOK).Body(items)
 }
 
 //ChangePassFunc - is the change password handler
 func ChangePassFunc(c *router.Control) {
-	c.Code(204)
+	//email,new_pw,old_pw
+	c.Code(http.StatusOK)
 }
 
 //parseRequest - is an internal function to parse json from request into local struct
@@ -65,32 +70,14 @@ func PostRegisterFunc(c *router.Control) {
 	var user = models.NewUser()
 	err := parseRequest(c, &user)
 	if err != nil {
-		log.Println(err)
-		c.Code(http.StatusUnprocessableEntity).Body(data{"errors": []string{err.Error()}})
+		showError(c, err, http.StatusUnprocessableEntity)
 		return
 	}
-	if user.Email == "" || user.Password == "" {
-		log.Println("Empty email or password")
-		c.Code(http.StatusUnprocessableEntity).Body(data{"errors": []string{"Unable to register."}})
-		return
-	}
-	if user.Exists() {
-		log.Println("Users exists")
-		c.Code(http.StatusUnprocessableEntity).Body(data{"errors": []string{"Unable to register!"}})
-		return
-	}
-	err = user.Save()
+	token, err := user.Register()
 	if err != nil {
-		log.Println(err)
-		c.Code(http.StatusUnprocessableEntity).Body(data{"errors": []string{err.Error()}})
+		showError(c, err, http.StatusUnprocessableEntity)
 		return
 	}
-	ok := user.Login()
-	if !ok {
-		c.Code(http.StatusUnprocessableEntity).Body(data{"errors": []string{"Unable to register."}})
-		return
-	}
-	token := user.CreateToken()
 	c.Code(http.StatusCreated).Body(data{"token": token, "user": user.ToJSON()})
 }
 
@@ -98,11 +85,11 @@ func PostRegisterFunc(c *router.Control) {
 func PostLoginFunc(c *router.Control) {
 	var user = models.NewUser()
 	parseRequest(c, &user)
-	ok := user.Login()
-	if !ok {
-		c.Code(http.StatusUnprocessableEntity).Body(data{"errors": []string{"Invalid email or password."}})
+	token, err := user.Login(user.Email, models.Hash(user.Password))
+	if err != nil {
+		showError(c, err, http.StatusUnauthorized)
+		return
 	}
-	token := user.CreateToken()
 	c.Code(http.StatusAccepted).Body(data{"token": token, "user": user.ToJSON()})
 }
 
@@ -148,7 +135,6 @@ func authenticateUser(c *router.Control) (models.User, error) {
 	}
 
 	token, err := jwt.ParseWithClaims(authHeaderParts[1], &models.UserClaims{}, func(token *jwt.Token) (interface{}, error) {
-		// Don't forget to validate the alg is what you expect:
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
