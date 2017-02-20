@@ -31,7 +31,7 @@ func HandleRootFunc(c *router.Control) {
 			models.Item{Content: "first", Uuid: uuid.NewV4().String()},
 			models.Item{Content: "second", Uuid: uuid.NewV4().String()},
 		},
-		"user": user,
+		"user": user.ToJSON(),
 	}
 	c.Code(200).Body(items)
 }
@@ -91,7 +91,7 @@ func PostRegisterFunc(c *router.Control) {
 		return
 	}
 	token := user.CreateToken()
-	c.Code(http.StatusCreated).Body(data{"token": token, "user": user})
+	c.Code(http.StatusCreated).Body(data{"token": token, "user": user.ToJSON()})
 }
 
 //PostLoginFunc - is the login handler
@@ -103,7 +103,7 @@ func PostLoginFunc(c *router.Control) {
 		c.Code(http.StatusUnprocessableEntity).Body(data{"errors": []string{"Invalid email or password."}})
 	}
 	token := user.CreateToken()
-	c.Code(http.StatusAccepted).Body(data{"token": token, "user": user})
+	c.Code(http.StatusAccepted).Body(data{"token": token, "user": user.ToJSON()})
 }
 
 //PostSyncFunc - is the items sync handler

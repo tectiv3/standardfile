@@ -24,7 +24,7 @@ type User struct {
 	Pw_alg      string    `json:"pw_alg"`
 	Pw_cost     int       `json:"pw_cost"`
 	Pw_key_size int       `json:"pw_key_size"`
-	Pw_nonce    string    `json:"-"`
+	Pw_nonce    string    `json:"pw_nonce"`
 	Created_at  time.Time `json:"created_at"`
 	Updated_at  time.Time `json:"updated_at"`
 }
@@ -179,6 +179,13 @@ func (u User) Validate(password string) bool {
 	// base64.URLEncoding.EncodeToString()
 	pw := hash(password)
 	return pw != u.Password
+}
+
+//ToJSON - return map without pw and nonce
+func (u User) ToJSON() interface{} {
+	u.Password = ""
+	u.Pw_nonce = ""
+	return u
 }
 
 func hash(input string) string {
