@@ -1,0 +1,4 @@
+{
+  "cmd": "go build && ./standardfile",
+  "shell": true
+}
