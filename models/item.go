@@ -89,14 +89,21 @@ func (i *Item) LoadValue(name string, value []string) {
 
 //Save - save current item into DB
 func (i *Item) save() error {
+	if i.Uuid == "" || !i.Exists() {
+		return i.create()
+	}
+	return i.update()
+}
+
+func (i *Item) create() error {
 	if i.Uuid == "" {
 		i.Uuid = uuid.NewV4().String()
-		i.Created_at = time.Now()
-	} else {
-		// find_or_create by uuid
 	}
+	i.Created_at = time.Now()
 	i.Updated_at = time.Now()
-	return nil
+	i.User_uuid = Auth.User.Uuid
+	log.Println("Create:", i)
+	return db.Query("INSERT INTO `items` (`uuid`, `user_uuid`, content,  content_type, enc_item_key, auth_hash, deleted, created_at, updated_at) VALUES(?,?,?,?,?,?,?,?,?)", i.Uuid, i.User_uuid, i.Content, i.Content_type, i.Enc_item_key, i.Auth_hash, i.Deleted, i.Created_at, i.Updated_at)
 }
 
 func (i Item) copy() Item {

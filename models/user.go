@@ -36,6 +36,11 @@ type UserClaims struct {
 	jwt.StandardClaims
 }
 
+//Session - handles current user session
+type Session struct {
+	User User
+}
+
 //SigningKey - export to routing
 var SigningKey = []byte{}
 
@@ -58,6 +63,9 @@ func NewUser() User {
 	user.Updated_at = time.Now()
 	return user
 }
+
+//Auth - global variable
+var Auth *Session
 
 //LoadValue - hydrate struct from map
 func (u *User) LoadValue(name string, value []string) {

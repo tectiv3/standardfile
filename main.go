@@ -4,14 +4,24 @@ import (
 	"log"
 
 	"github.com/takama/router"
+	"github.com/tectiv3/standardfile/models"
 	"github.com/tectiv3/standardfile/routing"
 )
+
+//Auth - global variable
+var Auth models.Session
 
 func logger(handle router.Handle) router.Handle {
 	return func(c *router.Control) {
 		log.Printf("%s\t%s", c.Request.Method, c.Request.RequestURI)
 		handle(c)
 	}
+}
+
+func init() {
+	Auth.User = models.NewUser()
+	models.Auth = &Auth
+	routing.Auth = &Auth
 }
 
 func main() {
