@@ -81,7 +81,7 @@ func _parseRequest(c *router.Control, value models.Loadable) error {
 			return err
 		}
 		fmt.Printf("%+v\n", r.Form)
-		models.LoadModel(value, r.Form)
+		models.Hydrate(value, r.Form)
 	}
 	return nil
 }
@@ -145,44 +145,39 @@ func GetParams(c *router.Control) {
 
 //SyncItems - is the items sync handler
 func SyncItems(c *router.Control) {
-	user, err := authenticateUser(c)
+	_, err := authenticateUser(c)
 	if err != nil {
 		showError(c, err, http.StatusUnauthorized)
 		return
 	}
-	r := c.Request
-	var input interface{}
-	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
+	var request models.SyncRequest
+	if e := _parseRequest(c, &request); e != nil {
+		showError(c, e, http.StatusUnprocessableEntity)
+		return
+	}
+	response, err := models.SyncItems(request)
 	if err != nil {
-		showError(c, err, http.StatusBadRequest)
-		return
+		showError(c, err, http.StatusInternalServerError)
 	}
-	if err := r.Body.Close(); err != nil {
-		showError(c, err, http.StatusBadRequest)
-		return
-	}
-	if len(body) == 0 {
-		showError(c, fmt.Errorf("Empty request"), http.StatusBadRequest)
-		return
-	}
-	if err := json.Unmarshal(body, &input); err != nil {
+	c.Body(response)
+}
+
+//BackupItems - export items
+func BackupItems(c *router.Control) {
+	err := c.Request.ParseForm()
+	if err != nil {
 		showError(c, err, http.StatusInternalServerError)
 		return
 	}
-	log.Println(input, user.Uuid)
-	// models.SyncItems(input["items"])
-	// 	options = {
-	//   :sync_token => params[:sync_token],
-	//   :cursor_token => params[:cursor_token],
-	//   :limit => params[:limit]
-	// }
-	// results = sync_manager.sync(params[:items], options)
-	// post_to_extensions(params.to_unsafe_hash[:items])
-	// {"retrieved_items" : [], "saved_items" : [], "unsaved_items" : [], "sync_token" : ""}
-	c.Body(map[string]interface{}{
-		"retrieved_items": models.Items{},
-		"saved_items":     models.Items{},
-		"unsaved_items":   models.Items{},
-		"sync_token":      "",
-	})
+	fmt.Printf("%+v\n", c.Request.Form)
+}
+
+//DeleteItems - deletes items
+func DeleteItems(c *router.Control) {
+	err := c.Request.ParseForm()
+	if err != nil {
+		showError(c, err, http.StatusInternalServerError)
+		return
+	}
+	fmt.Printf("%+v\n", c.Request.Form)
 }

@@ -36,10 +36,6 @@ type UserClaims struct {
 	jwt.StandardClaims
 }
 
-type Loadable interface {
-	LoadValue(name string, value []string)
-}
-
 //SigningKey - export to routing
 var SigningKey = []byte{}
 
@@ -82,13 +78,6 @@ func (u *User) LoadValue(name string, value []string) {
 		u.Pw_key_size, _ = strconv.Atoi(value[0])
 	case "pw_nonce":
 		u.Pw_nonce = value[0]
-	}
-}
-
-//LoadModel - hydrate model
-func LoadModel(loadable Loadable, data map[string][]string) {
-	for key, value := range data {
-		loadable.LoadValue(key, value)
 	}
 }
 

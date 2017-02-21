@@ -56,7 +56,6 @@ func (db Database) createTables() {
 	}
 }
 
-//eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1dWlkIjoiZDBkYzNjNzQtZTVhZS00NzZhLTkwMWEtZDQzM2Q3OWViNGM5IiwicHdfaGFzaCI6IjZSa0NNNFYwY0ppVUpFUk91IiwiaWF0IjoxNDg3NjExODUzfQ.OH83iy_bim_TNrXCCpdgBhooHhmzosEqflou5Ju1blA
 var database Database
 var err error
 
