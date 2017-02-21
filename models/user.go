@@ -236,6 +236,21 @@ func (u User) GetParams(email string) interface{} {
 	return params
 }
 
+func (u User) getItemsFromDate(date time.Time) (Items, error) {
+	// items = @user.items.order(:updated_at).where("updated_at >= ?", date)
+	return Items{}, nil
+}
+
+func (u User) getItemsOlder(date time.Time) (Items, error) {
+	// items = @user.items.order(:updated_at).where("updated_at > ?", date)
+	return Items{}, nil
+}
+
+func (u User) getItems(limit int) (Items, error) {
+	// items = @user.items.order(:updated_at)
+	return Items{}, nil
+}
+
 //Validate - validates password from jwt
 func (u User) Validate(password string) bool {
 	// base64.URLEncoding.EncodeToString()

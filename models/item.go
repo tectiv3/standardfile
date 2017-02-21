@@ -4,10 +4,12 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log"
+	"math"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/deckarep/golang-set"
 	"github.com/satori/go.uuid"
 )
 
@@ -29,19 +31,27 @@ type Items []Item
 
 //SyncRequest - type for incoming sync request
 type SyncRequest struct {
-	Items       []Item `json:"items"`
+	Items       Items  `json:"items"`
 	SyncToken   string `json:"sync_token"`
 	CursorToken string `json:"cursor_token"`
 	Limit       int    `json:"limit"`
 }
 
+type unsaved struct {
+	Item
+	error
+}
+
 //SyncResponse - type for response
 type SyncResponse struct {
-	Retrieved Items  `json:"retrieved_items"`
-	Saved     Items  `json:"saved_items"`
-	Unsaved   Items  `json:"unsaved_items"`
-	SyncToken string `json:"sync_token"`
+	Retrieved   Items     `json:"retrieved_items"`
+	Saved       Items     `json:"saved_items"`
+	Unsaved     []unsaved `json:"unsaved_items"`
+	SyncToken   string    `json:"sync_token"`
+	CursorToken string    `json:"cursor_token,omitempty"`
 }
+
+const minConflictInterval = 5.0
 
 //LoadValue - hydrate struct from map
 func (r *SyncRequest) LoadValue(name string, value []string) {
@@ -78,12 +88,30 @@ func (i *Item) LoadValue(name string, value []string) {
 }
 
 //Save - save current item into DB
-func (i *Item) save() {
+func (i *Item) save() error {
 	if i.Uuid == "" {
 		i.Uuid = uuid.NewV4().String()
 		i.Created_at = time.Now()
+	} else {
+		// find_or_create by uuid
 	}
 	i.Updated_at = time.Now()
+	return nil
+}
+
+func (i Item) copy() Item {
+	i.Uuid = uuid.NewV4().String()
+	i.Updated_at = time.Now()
+	return i
+}
+
+func (i *Item) delete() error {
+	if i.Uuid == "" {
+		return fmt.Errorf("Trying to delete unexisting item")
+	} else {
+		// find_or_create by uuid
+	}
+	return nil
 }
 
 //GetTokenFromTime - generates sync token for current time
@@ -109,11 +137,117 @@ func GetTimeFromToken(token string) time.Time {
 }
 
 //SyncItems - sync manager
-func SyncItems(input SyncRequest) (SyncResponse, error) {
-	return SyncResponse{
-		Items{},
-		Items{},
-		Items{},
-		GetTokenFromTime(time.Now()),
-	}, nil
+func (user User) SyncItems(request SyncRequest) (SyncResponse, error) {
+
+	response := SyncResponse{
+		Retrieved:   Items{},
+		Saved:       Items{},
+		Unsaved:     []unsaved{},
+		SyncToken:   GetTokenFromTime(time.Now()),
+		CursorToken: "",
+	}
+
+	if request.Limit == 0 {
+		request.Limit = 100000
+	}
+
+	response.SyncToken = GetTokenFromTime(time.Now())
+	var err error
+	var items Items
+	if request.CursorToken != "" {
+		items, err = user.getItemsFromDate(GetTimeFromToken(request.CursorToken))
+	} else if request.SyncToken != "" {
+		items, err = user.getItemsOlder(GetTimeFromToken(request.SyncToken))
+	} else {
+		items, err = user.getItems(request.Limit)
+		response.CursorToken = GetTokenFromTime(items[len(items)-1].Updated_at)
+	}
+	log.Println(items)
+	if err != nil {
+		return response, err
+	}
+	response.Saved, response.Unsaved, err = request.Items.save()
+	if err != nil {
+		return response, err
+	}
+	if len(response.Saved) > 0 {
+		response.SyncToken = GetTokenFromTime(response.Saved[0].Updated_at)
+	}
+	// manage conflicts
+	saved := mapset.NewSet()
+	retreived := mapset.NewSet()
+	for _, item := range response.Retrieved {
+		retreived.Add(item.Uuid)
+	}
+	for _, item := range response.Saved {
+		saved.Add(item.Uuid)
+	}
+	conflicts := saved.Intersect(retreived)
+	log.Println("Conflicts", conflicts)
+	// saved items take precedence, retrieved items are duplicated with a new uuid
+	for _, uuid := range conflicts.ToSlice() {
+		// if changes are greater than minConflictInterval seconds apart, create conflicted copy, otherwise discard conflicted
+		log.Println(uuid)
+		savedCopy := response.Saved.find(uuid.(string))
+		retreivedCopy := response.Retrieved.find(uuid.(string))
+
+		if savedCopy.isConflictedWith(retreivedCopy) {
+			log.Printf("Creating conflicted copy of %v\n", uuid)
+			dupe := retreivedCopy.copy()
+			response.Retrieved = append(response.Retrieved, dupe)
+		}
+		response.Retrieved.delete(uuid.(string))
+	}
+
+	return response, nil
+}
+
+func (i Item) isConflictedWith(copy Item) bool {
+	diff := math.Abs(float64(i.Updated_at.Unix() - copy.Updated_at.Unix()))
+	return diff > minConflictInterval
+}
+
+func (items Items) save() (Items, []unsaved, error) {
+	var savedItems Items
+	var unsavedItems []unsaved
+
+	if len(items) == 0 {
+		return savedItems, unsavedItems, nil
+	}
+
+	for _, item := range items {
+		log.Println(item)
+		var err error
+		if item.Deleted {
+			err = item.delete()
+		} else {
+			err = item.save()
+		}
+		if err != nil {
+			unsavedItems = append(unsavedItems, unsaved{item, err})
+		} else {
+			savedItems = append(savedItems, item)
+		}
+	}
+	return savedItems, unsavedItems, nil
+}
+
+func (items Items) find(uuid string) Item {
+	for _, item := range items {
+		if item.Uuid == uuid {
+			return item
+		}
+	}
+	return Item{}
+}
+
+func (items *Items) delete(uuid string) {
+	position := 0
+	for i, item := range *items {
+		if item.Uuid == uuid {
+			position = i
+			break
+		}
+	}
+	(*items) = (*items)[:position:position]
 }

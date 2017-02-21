@@ -145,7 +145,7 @@ func GetParams(c *router.Control) {
 
 //SyncItems - is the items sync handler
 func SyncItems(c *router.Control) {
-	_, err := authenticateUser(c)
+	user, err := authenticateUser(c)
 	if err != nil {
 		showError(c, err, http.StatusUnauthorized)
 		return
@@ -155,11 +155,11 @@ func SyncItems(c *router.Control) {
 		showError(c, e, http.StatusUnprocessableEntity)
 		return
 	}
-	response, err := models.SyncItems(request)
+	response, err := user.SyncItems(request)
 	if err != nil {
 		showError(c, err, http.StatusInternalServerError)
 	}
-	c.Body(response)
+	c.Code(http.StatusAccepted).Body(response)
 }
 
 //BackupItems - export items
