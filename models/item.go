@@ -23,10 +23,15 @@ type Item struct {
 type Items []Item
 
 //Save - save current item into DB
-func (i *Item) Save() {
+func (i *Item) save() {
 	if i.Uuid == "" {
 		i.Uuid = uuid.NewV4().String()
 		i.Created_at = time.Now()
 	}
 	i.Updated_at = time.Now()
+}
+
+//SyncItems - sync manager
+func SyncItems(input interface{}) {
+
 }

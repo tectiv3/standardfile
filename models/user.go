@@ -36,6 +36,10 @@ type UserClaims struct {
 	jwt.StandardClaims
 }
 
+type Loadable interface {
+	LoadValue(name string, value []string)
+}
+
 //SigningKey - export to routing
 var SigningKey = []byte{}
 
@@ -57,6 +61,35 @@ func NewUser() User {
 	user.Created_at = time.Now()
 	user.Updated_at = time.Now()
 	return user
+}
+
+//LoadValue - hydrate struct from map
+func (u *User) LoadValue(name string, value []string) {
+	switch name {
+	case "uuid":
+		u.Uuid = value[0]
+	case "email":
+		u.Email = value[0]
+	case "password":
+		u.Password = value[0]
+	case "pw_func":
+		u.Pw_func = value[0]
+	case "pw_alg":
+		u.Pw_alg = value[0]
+	case "pw_cost":
+		u.Pw_cost, _ = strconv.Atoi(value[0])
+	case "pw_key_size":
+		u.Pw_key_size, _ = strconv.Atoi(value[0])
+	case "pw_nonce":
+		u.Pw_nonce = value[0]
+	}
+}
+
+//LoadModel - hydrate model
+func LoadModel(loadable Loadable, data map[string][]string) {
+	for key, value := range data {
+		loadable.LoadValue(key, value)
+	}
 }
 
 //save - save current user into DB

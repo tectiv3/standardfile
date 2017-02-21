@@ -6,11 +6,11 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"mime"
 	"net/http"
 	"strings"
 
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/satori/go.uuid"
 	"github.com/takama/router"
 	"github.com/tectiv3/standardfile/models"
 )
@@ -20,106 +20,6 @@ type data map[string]interface{}
 func showError(c *router.Control, err error, code int) {
 	log.Println(err)
 	c.Code(code).Body(data{"errors": []string{err.Error()}})
-}
-
-//HandleRootFunc - is the root handler
-func HandleRootFunc(c *router.Control) {
-	user, err := authenticateUser(c)
-	if err != nil {
-		showError(c, err, http.StatusUnauthorized)
-		return
-	}
-	c.UseTimer()
-	items := data{
-		"items": models.Items{
-			models.Item{Content: "first", Uuid: uuid.NewV4().String()},
-			models.Item{Content: "second", Uuid: uuid.NewV4().String()},
-		},
-		"user": user.ToJSON(),
-	}
-	c.Code(http.StatusOK).Body(items)
-}
-
-//ChangePassFunc - is the change password handler
-func ChangePassFunc(c *router.Control) {
-	//email,new_pw,old_pw
-	c.Code(http.StatusOK)
-}
-
-//parseRequest - is an internal function to parse json from request into local struct
-func parseRequest(c *router.Control, value interface{}) error {
-	r := c.Request
-	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
-	if err != nil {
-		return err
-	}
-	if err := r.Body.Close(); err != nil {
-		return err
-	}
-	if len(body) == 0 {
-		return fmt.Errorf("Empty request")
-	}
-	if err := json.Unmarshal(body, &value); err != nil {
-		return err
-	}
-	return nil
-}
-
-//PostRegisterFunc - is the registration handler
-func PostRegisterFunc(c *router.Control) {
-	var user = models.NewUser()
-	err := parseRequest(c, &user)
-	if err != nil {
-		showError(c, err, http.StatusUnprocessableEntity)
-		return
-	}
-	token, err := user.Register()
-	if err != nil {
-		showError(c, err, http.StatusUnprocessableEntity)
-		return
-	}
-	c.Code(http.StatusCreated).Body(data{"token": token, "user": user.ToJSON()})
-}
-
-//PostLoginFunc - is the login handler
-func PostLoginFunc(c *router.Control) {
-	var user = models.NewUser()
-	parseRequest(c, &user)
-	token, err := user.Login(user.Email, models.Hash(user.Password))
-	if err != nil {
-		showError(c, err, http.StatusUnauthorized)
-		return
-	}
-	c.Code(http.StatusAccepted).Body(data{"token": token, "user": user.ToJSON()})
-}
-
-//PostSyncFunc - is the items sync handler
-func PostSyncFunc(c *router.Control) {
-	_, err := authenticateUser(c)
-	if err != nil {
-		log.Println(err)
-		c.Code(http.StatusUnauthorized).Body(data{"errors": []string{err.Error()}})
-		return
-	}
-	var message string
-	message = "POST Sync"
-	c.Body(message)
-}
-
-//GetParamsFunc - is the get auth parameters handler
-func GetParamsFunc(c *router.Control) {
-	user, err := authenticateUser(c)
-	if err != nil {
-		showError(c, err, http.StatusUnauthorized)
-		return
-	}
-	// email := c.Request.FormValue("email")
-	// if email == "" {
-	// showError(c, fmt.Errorf("Empty email"), http.StatusUnauthorized)
-	// return
-	// }
-	params := user.GetParams("") // (email)
-	c.Code(200).Body(params)
 }
 
 func authenticateUser(c *router.Control) (models.User, error) {
@@ -154,4 +54,135 @@ func authenticateUser(c *router.Control) (models.User, error) {
 	}
 
 	return user, fmt.Errorf("Invalid token")
+}
+
+//_parseRequest - is an internal function to parse json from request into local struct
+func _parseRequest(c *router.Control, value models.Loadable) error {
+	r := c.Request
+	ct := r.Header.Get("Content-Type")
+	mediatype, _, _ := mime.ParseMediaType(ct)
+	if mediatype == "application/json" {
+		body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
+		if err != nil {
+			return err
+		}
+		if err := r.Body.Close(); err != nil {
+			return err
+		}
+		if len(body) == 0 {
+			return fmt.Errorf("Empty request")
+		}
+		if err := json.Unmarshal(body, &value); err != nil {
+			return err
+		}
+	} else {
+		err := r.ParseForm()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("%+v\n", r.Form)
+		models.LoadModel(value, r.Form)
+	}
+	return nil
+}
+
+//Dashboard - is the root handler
+func Dashboard(c *router.Control) {
+	c.Code(http.StatusOK).Body("Standard File")
+}
+
+//ChangePassword - is the change password handler
+func ChangePassword(c *router.Control) {
+	//email,new_pw,old_pw
+	c.Code(http.StatusOK)
+}
+
+//Registration - is the registration handler
+func Registration(c *router.Control) {
+	var user = models.NewUser()
+	if err := _parseRequest(c, &user); err != nil {
+		showError(c, err, http.StatusUnprocessableEntity)
+		return
+	}
+	token, err := user.Register()
+	if err != nil {
+		showError(c, err, http.StatusUnprocessableEntity)
+		return
+	}
+	c.Code(http.StatusCreated).Body(data{"token": token, "user": user.ToJSON()})
+}
+
+//Login - is the login handler
+func Login(c *router.Control) {
+	var user = models.NewUser()
+	if err := _parseRequest(c, &user); err != nil {
+		showError(c, err, http.StatusUnprocessableEntity)
+		return
+	}
+	token, err := user.Login(user.Email, models.Hash(user.Password))
+	if err != nil {
+		showError(c, err, http.StatusUnauthorized)
+		return
+	}
+	c.Code(http.StatusAccepted).Body(data{"token": token, "user": user.ToJSON()})
+}
+
+//GetParams - is the get auth parameters handler
+func GetParams(c *router.Control) {
+	user, err := authenticateUser(c)
+	if err != nil {
+		showError(c, err, http.StatusUnauthorized)
+		return
+	}
+	// email := c.Request.FormValue("email")
+	// if email == "" {
+	// showError(c, fmt.Errorf("Empty email"), http.StatusUnauthorized)
+	// return
+	// }
+	params := user.GetParams("") // (email)
+	c.Code(200).Body(params)
+}
+
+//SyncItems - is the items sync handler
+func SyncItems(c *router.Control) {
+	user, err := authenticateUser(c)
+	if err != nil {
+		showError(c, err, http.StatusUnauthorized)
+		return
+	}
+	r := c.Request
+	var input interface{}
+	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
+	if err != nil {
+		showError(c, err, http.StatusBadRequest)
+		return
+	}
+	if err := r.Body.Close(); err != nil {
+		showError(c, err, http.StatusBadRequest)
+		return
+	}
+	if len(body) == 0 {
+		showError(c, fmt.Errorf("Empty request"), http.StatusBadRequest)
+		return
+	}
+	if err := json.Unmarshal(body, &input); err != nil {
+		showError(c, err, http.StatusInternalServerError)
+		return
+	}
+	log.Println(input, user.Uuid)
+	// models.SyncItems(input["items"])
+	// 	options = {
+	//   :sync_token => params[:sync_token],
+	//   :cursor_token => params[:cursor_token],
+	//   :limit => params[:limit]
+	// }
+	// results = sync_manager.sync(params[:items], options)
+	// post_to_extensions(params.to_unsafe_hash[:items])
+	// {"retrieved_items" : [], "saved_items" : [], "unsaved_items" : [], "sync_token" : ""}
+	c.Body(map[string]interface{}{
+		"retrieved_items": models.Items{},
+		"saved_items":     models.Items{},
+		"unsaved_items":   models.Items{},
+		"sync_token":      "",
+	})
 }

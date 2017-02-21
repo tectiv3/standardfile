@@ -22,12 +22,12 @@ func main() {
 	r := router.New()
 	r.CustomHandler = logger
 
-	r.POST("/items/sync", routing.PostSyncFunc)
-	r.GET("/auth/params", routing.GetParamsFunc)
-	r.POST("/auth/sign_in", routing.PostLoginFunc)
-	r.POST("/auth", routing.PostRegisterFunc)
-	r.PATCH("/auth", routing.ChangePassFunc)
-	r.GET("/", routing.HandleRootFunc)
+	r.GET("/", routing.Dashboard)
+	r.POST("/api/items/sync", routing.SyncItems)
+	r.GET("/api/auth/params", routing.GetParams)
+	r.POST("/api/auth/sign_in", routing.Login)
+	r.POST("/api/auth", routing.Registration)
+	r.PATCH("/api/auth", routing.ChangePassword)
 
 	log.Print("Running on port 8888")
 	r.Listen(":8888")
