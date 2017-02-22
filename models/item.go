@@ -126,6 +126,7 @@ func (this *Item) delete() error {
 	this.Content = ""
 	this.Enc_item_key = ""
 	this.Auth_hash = ""
+	this.Updated_at = time.Now()
 
 	return db.Query("UPDATE `items` SET `content`='', `enc_item_key`='', `auth_hash`='',`deleted`=1, `updated_at`=? WHERE `uuid`=? AND `user_uuid`=?", this.Updated_at, this.Uuid, this.User_uuid)
 }
@@ -288,11 +289,16 @@ func (items Items) save(userUUID string) (Items, []unsaved, error) {
 			unsavedItems = append(unsavedItems, unsaved{item, err})
 			log.Println("Unsaved:", item)
 		} else {
+			item.load() //reloading item info from DB
 			savedItems = append(savedItems, item)
 			log.Println("Saved:", item)
 		}
 	}
 	return savedItems, unsavedItems, nil
+}
+
+func (this *Item) load() bool {
+	return this.LoadByUUID(this.Uuid)
 }
 
 func _loadItems(result []interface{}, err error) (Items, error) {
