@@ -233,10 +233,10 @@ func (u User) GetParams(email string) interface{} {
 	// if u.Email != email {}
 	u.loadByEmail(email)
 
-	params := map[string]string{}
-	params["pw_cost"] = strconv.Itoa(u.Pw_cost)
+	params := map[string]interface{}{}
+	params["pw_cost"] = u.Pw_cost
 	params["pw_alg"] = u.Pw_alg
-	params["pw_key_size"] = strconv.Itoa(u.Pw_key_size)
+	params["pw_key_size"] = u.Pw_key_size
 	params["pw_func"] = u.Pw_func
 
 	var salt string

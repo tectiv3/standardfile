@@ -34,6 +34,7 @@ func main() {
 	r.PATCH("/api/auth", routing.ChangePassword)
 	r.POST("/api/auth/change_pw", routing.ChangePassword)
 	r.POST("/api/auth/sign_in", routing.Login)
+	r.POST("/api/auth/sign_in.json", routing.Login)
 	r.GET("/api/auth/params", routing.GetParams)
 
 	log.Println("Running on port 8888")
