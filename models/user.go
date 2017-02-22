@@ -267,8 +267,7 @@ func (u User) loadItems(limit int) ([]interface{}, error) {
 
 //Validate - validates password from jwt
 func (u User) Validate(password string) bool {
-	pw := Hash(password)
-	return pw != u.Password
+	return password == u.Password
 }
 
 //ToJSON - return map without pw and nonce

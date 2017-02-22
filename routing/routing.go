@@ -47,6 +47,7 @@ func authenticateUser(c *router.Control) (models.User, error) {
 		if !ok {
 			return user, fmt.Errorf("Unknown user")
 		}
+
 		if user.Validate(claims.Pw_hash) {
 			return user, nil
 		}
