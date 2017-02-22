@@ -108,12 +108,13 @@ func (this *Item) create() error {
 	}
 	this.Created_at = time.Now()
 	this.Updated_at = time.Now()
-	log.Println("Create:", this)
+	log.Println("Create:", this.Uuid)
 	return db.Query("INSERT INTO `items` (`uuid`, `user_uuid`, content,  content_type, enc_item_key, auth_hash, deleted, created_at, updated_at) VALUES(?,?,?,?,?,?,?,?,?)", this.Uuid, this.User_uuid, this.Content, this.Content_type, this.Enc_item_key, this.Auth_hash, this.Deleted, this.Created_at, this.Updated_at)
 }
 
 func (this *Item) update() error {
 	this.Updated_at = time.Now()
+	log.Println("Update:", this.Uuid)
 
 	return db.Query("UPDATE `items` SET `content`=?, `enc_item_key`=?, `auth_hash`=?, `deleted`=?, `updated_at`=? WHERE `uuid`=? AND `user_uuid`=?", this.Content, this.Enc_item_key, this.Auth_hash, this.Deleted, this.Updated_at, this.Uuid, this.User_uuid)
 }
@@ -151,7 +152,7 @@ func (this Item) Exists() bool {
 		log.Println(err)
 		return false
 	}
-
+	log.Println("Exists:", uuid)
 	return uuid != ""
 }
 
@@ -207,35 +208,36 @@ func (user User) SyncItems(request SyncRequest) (SyncResponse, error) {
 	var cursorTime time.Time
 	log.Println("Get items")
 	response.Retrieved, cursorTime, err = user.getItems(request)
+	log.Println("Retreived items:", response.Retrieved)
 	if err != nil {
 		return response, err
 	}
 	if !cursorTime.IsZero() {
 		response.CursorToken = GetTokenFromTime(cursorTime)
 	}
-
-	log.Println("Save items")
+	log.Println("Save incoming items")
 	response.Saved, response.Unsaved, err = request.Items.save(user.Uuid)
 	if err != nil {
 		return response, err
 	}
 	if len(response.Saved) > 0 {
 		response.SyncToken = GetTokenFromTime(response.Saved[0].Updated_at)
+		// manage conflicts
+		log.Println("Conflicts check")
+		response.Saved.checkForConflicts(&response.Retrieved)
 	}
-	// manage conflicts
-	log.Println("Conflicts check")
-	response.Saved.checkForConflicts(&response.Retrieved)
-
 	return response, nil
 }
 
-func (items Items) checkForConflicts(incoming *Items) {
+func (items Items) checkForConflicts(existing *Items) {
+	log.Println("Saved:", items)
+	log.Println("Retreived:", existing)
 	saved := mapset.NewSet()
 	for _, item := range items {
 		saved.Add(item.Uuid)
 	}
 	retreived := mapset.NewSet()
-	for _, item := range *incoming {
+	for _, item := range *existing {
 		retreived.Add(item.Uuid)
 	}
 	conflicts := saved.Intersect(retreived)
@@ -245,7 +247,7 @@ func (items Items) checkForConflicts(incoming *Items) {
 		// if changes are greater than minConflictInterval seconds apart, create conflicted copy, otherwise discard conflicted
 		log.Println(uuid)
 		savedCopy := items.find(uuid.(string))
-		retreivedCopy := incoming.find(uuid.(string))
+		retreivedCopy := existing.find(uuid.(string))
 
 		if savedCopy.isConflictedWith(retreivedCopy) {
 			log.Printf("Creating conflicted copy of %v\n", uuid)
@@ -253,21 +255,22 @@ func (items Items) checkForConflicts(incoming *Items) {
 			if err != nil {
 				log.Println(err)
 			} else {
-				*incoming = append(*incoming, dupe)
+				*existing = append(*existing, dupe)
 			}
 		}
-		incoming.delete(uuid.(string))
+		existing.delete(uuid.(string))
 	}
 }
 
 func (this Item) isConflictedWith(copy Item) bool {
 	diff := math.Abs(float64(this.Updated_at.Unix() - copy.Updated_at.Unix()))
+	log.Println("Conflict diff, min interval:", diff, minConflictInterval)
 	return diff > minConflictInterval
 }
 
 func (items Items) save(userUUID string) (Items, []unsaved, error) {
-	var savedItems Items
-	var unsavedItems []unsaved
+	savedItems := Items{}
+	unsavedItems := []unsaved{}
 
 	if len(items) == 0 {
 		return savedItems, unsavedItems, nil
@@ -292,8 +295,9 @@ func (items Items) save(userUUID string) (Items, []unsaved, error) {
 }
 
 func _loadItems(result []interface{}, err error) (Items, error) {
-	var items Items
+	items := Items{}
 	for _, item := range result {
+		log.Println("Loading...", item.(*Item).Uuid)
 		items = append(items, *item.(*Item))
 	}
 	return items, err
@@ -311,7 +315,6 @@ func (user User) getItems(request SyncRequest) (items Items, cursorTime time.Tim
 		items, err = _loadItems(user.loadItems(request.Limit))
 		cursorTime = items[len(items)-1].Updated_at
 	}
-	log.Println("Result items:", items)
 	return items, cursorTime, err
 }
 

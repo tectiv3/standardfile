@@ -72,6 +72,7 @@ func _parseRequest(c *router.Control, value models.Loadable) error {
 		if len(body) == 0 {
 			return fmt.Errorf("Empty request")
 		}
+		log.Println("Request:", string(body))
 		if err := json.Unmarshal(body, &value); err != nil {
 			return err
 		}
@@ -129,17 +130,13 @@ func Login(c *router.Control) {
 
 //GetParams - is the get auth parameters handler
 func GetParams(c *router.Control) {
-	user, err := authenticateUser(c)
-	if err != nil {
-		showError(c, err, http.StatusUnauthorized)
+	user := models.NewUser()
+	email := c.Request.FormValue("email")
+	if email == "" {
+		showError(c, fmt.Errorf("Empty email"), http.StatusUnauthorized)
 		return
 	}
-	// email := c.Request.FormValue("email")
-	// if email == "" {
-	// showError(c, fmt.Errorf("Empty email"), http.StatusUnauthorized)
-	// return
-	// }
-	params := user.GetParams("") // (email)
+	params := user.GetParams(email)
 	c.Code(200).Body(params)
 }
 
@@ -159,6 +156,8 @@ func SyncItems(c *router.Control) {
 	if err != nil {
 		showError(c, err, http.StatusInternalServerError)
 	}
+	content, _ := json.MarshalIndent(response, "", "  ")
+	log.Println("Response:", string(content))
 	c.Code(http.StatusAccepted).Body(response)
 }
 

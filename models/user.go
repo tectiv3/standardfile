@@ -218,7 +218,7 @@ func (u *User) loadByEmailAndPassword(email, password string) {
 //GetParams returns auth parameters by email
 func (u User) GetParams(email string) interface{} {
 	// if u.Email != email {}
-	// u.loadByEmail(email)
+	u.loadByEmail(email)
 
 	params := map[string]string{}
 	params["pw_cost"] = strconv.Itoa(u.Pw_cost)
@@ -242,8 +242,8 @@ func (u User) loadItemsFromDate(date time.Time) ([]interface{}, error) {
 }
 
 func (u User) loadItemsOlder(date time.Time) ([]interface{}, error) {
-	// var item Item
-	return db.Select(fmt.Sprintf("SELECT %s FROM `items` WHERE `user_uuid`=? AND `updated_at` > ? ORDER BY `updated_at` DESC", sqlstruct.Columns(Item{})), &Item{}, u.Uuid, date)
+	var item = new(Item)
+	return db.Select(fmt.Sprintf("SELECT %s FROM `items` WHERE `user_uuid`=? AND `updated_at` > ? ORDER BY `updated_at` DESC", sqlstruct.Columns(Item{})), item, u.Uuid, date)
 }
 
 func (u User) loadItems(limit int) ([]interface{}, error) {
