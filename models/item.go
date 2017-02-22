@@ -53,7 +53,7 @@ type unsaved struct {
 type SyncResponse struct {
 	Retrieved   Items     `json:"retrieved_items"`
 	Saved       Items     `json:"saved_items"`
-	Unsaved     []unsaved `json:"unsaved_items"`
+	Unsaved     []unsaved `json:"unsaved"`
 	SyncToken   string    `json:"sync_token"`
 	CursorToken string    `json:"cursor_token,omitempty"`
 }
