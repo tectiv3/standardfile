@@ -126,31 +126,39 @@ func SelectStruct(sql string, obj interface{}, args ...interface{}) (interface{}
 	if err != nil {
 		return nil, err
 	}
+
 	return obj, nil
 }
 
 //Select - selects multiple results from the DB
-func Select(sql string, obj interface{}, args ...interface{}) (interface{}, error) {
+func Select(sql string, obj interface{}, args ...interface{}) ([]interface{}, error) {
 	log.Println("Query:", sql, args)
+
+	// destv := reflect.ValueOf(&obj)
+	// elem := destv.Elem()
+	// typeOfObj := elem.Type()
+	// log.Println("destv", destv) //reference
+	// log.Println("elem", elem.Interface()) // real value of obj
+	// log.Println("Typeof", typeOfObj) //interface question why??!
+
 	stmt := database.prepare(sql)
 	defer stmt.Close()
 	var err error
 	rows, err := stmt.Query(args...)
 	defer rows.Close()
+
 	var result []interface{}
-	log.Println("After query")
 	for rows.Next() {
-		log.Println("Before reflect")
-		t := reflect.TypeOf(obj).Elem()
-		log.Println("t:", t)
-		ms := reflect.New(t).Elem()
-		log.Println("MS:", ms)
+		// reflect.New(t).Elem().Interface()
+		// ms := reflect.New(reflect.TypeOf(&obj)).Elem()
+		// log.Println("MS:", ms)
+		// log.Println(reflect.TypeOf(&obj))
 		// t := new(reflect.TypeOf(obj))
 		// t := reflect.TypeOf((*obj)(nil))
 		// t := reflect.TypeOf((*obj)(nil)).Elem()
-		err = sqlstruct.Scan(&ms, rows)
-		result = append(result, t)
+		//obj is a !!pointer!! to struct wich would receive data
+		err = sqlstruct.Scan(obj, rows)
+		result = append(result, obj)
 	}
-	log.Println("After rows")
 	return result, err
 }

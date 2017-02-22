@@ -291,23 +291,27 @@ func (items Items) save(userUUID string) (Items, []unsaved, error) {
 	return savedItems, unsavedItems, nil
 }
 
+func _loadItems(result []interface{}, err error) (Items, error) {
+	var items Items
+	for _, item := range result {
+		items = append(items, *item.(*Item))
+	}
+	return items, err
+}
+
 func (user User) getItems(request SyncRequest) (items Items, cursorTime time.Time, err error) {
-	var result interface{}
 	if request.CursorToken != "" {
 		log.Println("loadItemsFromDate")
-		result, err = user.loadItemsFromDate(GetTimeFromToken(request.CursorToken))
+		items, err = _loadItems(user.loadItemsFromDate(GetTimeFromToken(request.CursorToken)))
 	} else if request.SyncToken != "" {
 		log.Println("loadItemsOlder")
-		result, err = user.loadItemsOlder(GetTimeFromToken(request.SyncToken))
+		items, err = _loadItems(user.loadItemsOlder(GetTimeFromToken(request.SyncToken)))
 	} else {
 		log.Println("loadItems")
-		result, err = user.loadItems(request.Limit)
-		items = result.(Items)
+		items, err = _loadItems(user.loadItems(request.Limit))
 		cursorTime = items[len(items)-1].Updated_at
 	}
-	log.Println(result)
-	// items = result.([]Item)
-	// log.Println("Result items:", items)
+	log.Println("Result items:", items)
 	return items, cursorTime, err
 }
 

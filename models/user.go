@@ -237,16 +237,17 @@ func (u User) GetParams(email string) interface{} {
 	return params
 }
 
-func (u User) loadItemsFromDate(date time.Time) (interface{}, error) {
-	return db.Select(fmt.Sprintf("SELECT %s FROM `items` WHERE `user_uuid`=? AND `updated_at` >= ? ORDER BY `updated_at` DESC", sqlstruct.Columns(Item{})), Item{}, u.Uuid, date)
+func (u User) loadItemsFromDate(date time.Time) ([]interface{}, error) {
+	return db.Select(fmt.Sprintf("SELECT %s FROM `items` WHERE `user_uuid`=? AND `updated_at` >= ? ORDER BY `updated_at` DESC", sqlstruct.Columns(Item{})), &Item{}, u.Uuid, date)
 }
 
-func (u User) loadItemsOlder(date time.Time) (interface{}, error) {
-	return db.Select(fmt.Sprintf("SELECT %s FROM `items` WHERE `user_uuid`=? AND `updated_at` > ? ORDER BY `updated_at` DESC", sqlstruct.Columns(Item{})), Item{}, u.Uuid, date)
+func (u User) loadItemsOlder(date time.Time) ([]interface{}, error) {
+	// var item Item
+	return db.Select(fmt.Sprintf("SELECT %s FROM `items` WHERE `user_uuid`=? AND `updated_at` > ? ORDER BY `updated_at` DESC", sqlstruct.Columns(Item{})), &Item{}, u.Uuid, date)
 }
 
-func (u User) loadItems(limit int) (interface{}, error) {
-	return db.Select(fmt.Sprintf("SELECT %s FROM `items` WHERE `user_uuid`=? ORDER BY `updated_at` DESC", sqlstruct.Columns(Item{})), Item{}, u.Uuid)
+func (u User) loadItems(limit int) ([]interface{}, error) {
+	return db.Select(fmt.Sprintf("SELECT %s FROM `items` WHERE `user_uuid`=? ORDER BY `updated_at` DESC", sqlstruct.Columns(Item{})), &Item{}, u.Uuid)
 }
 
 //Validate - validates password from jwt
