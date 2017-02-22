@@ -208,7 +208,7 @@ func (user User) SyncItems(request SyncRequest) (SyncResponse, error) {
 	var cursorTime time.Time
 	log.Println("Get items")
 	response.Retrieved, cursorTime, err = user.getItems(request)
-	log.Println("Retreived items:", response.Retrieved)
+	// log.Println("Retreived items:", response.Retrieved)
 	if err != nil {
 		return response, err
 	}
@@ -230,8 +230,8 @@ func (user User) SyncItems(request SyncRequest) (SyncResponse, error) {
 }
 
 func (items Items) checkForConflicts(existing *Items) {
-	log.Println("Saved:", items)
-	log.Println("Retreived:", existing)
+	log.Println("Saved len:", len(items))
+	log.Println("Retreived len:", len(*existing))
 	saved := mapset.NewSet()
 	for _, item := range items {
 		saved.Add(item.Uuid)
@@ -277,7 +277,6 @@ func (items Items) save(userUUID string) (Items, []unsaved, error) {
 	}
 
 	for _, item := range items {
-		log.Println(item)
 		var err error
 		item.User_uuid = userUUID
 		if item.Deleted {
@@ -287,8 +286,10 @@ func (items Items) save(userUUID string) (Items, []unsaved, error) {
 		}
 		if err != nil {
 			unsavedItems = append(unsavedItems, unsaved{item, err})
+			log.Println("Unsaved:", item)
 		} else {
 			savedItems = append(savedItems, item)
+			log.Println("Saved:", item)
 		}
 	}
 	return savedItems, unsavedItems, nil

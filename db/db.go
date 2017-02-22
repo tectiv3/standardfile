@@ -16,8 +16,6 @@ type Database struct {
 	db *sql.DB
 }
 
-//YYYY-MM-DD HH:MM:SS
-
 func (db Database) begin() (tx *sql.Tx) {
 	tx, err := db.db.Begin()
 	if err != nil {
@@ -133,7 +131,7 @@ func SelectStruct(sql string, obj interface{}, args ...interface{}) (interface{}
 
 //Select - selects multiple results from the DB
 func Select(sql string, obj interface{}, args ...interface{}) (result []interface{}, err error) {
-	log.Println("Query:", sql, args)
+	// log.Println("Query:", sql, args)
 
 	destv := reflect.ValueOf(obj)
 	elem := destv.Elem()

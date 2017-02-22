@@ -251,21 +251,22 @@ func (u User) GetParams(email string) interface{} {
 }
 
 func (u User) loadItemsFromDate(date time.Time) ([]interface{}, error) {
-	return db.Select(fmt.Sprintf("SELECT %s FROM `items` WHERE `user_uuid`=? AND `updated_at` >= ? ORDER BY `updated_at` DESC", sqlstruct.Columns(Item{})), &Item{}, u.Uuid, date)
+	var item = new(Item)
+	return db.Select(fmt.Sprintf("SELECT %s FROM `items` WHERE `user_uuid`=? AND `updated_at` >= ? ORDER BY `updated_at` DESC", sqlstruct.Columns(*item)), item, u.Uuid, date)
 }
 
 func (u User) loadItemsOlder(date time.Time) ([]interface{}, error) {
 	var item = new(Item)
-	return db.Select(fmt.Sprintf("SELECT %s FROM `items` WHERE `user_uuid`=? AND `updated_at` > ? ORDER BY `updated_at` DESC", sqlstruct.Columns(Item{})), item, u.Uuid, date)
+	return db.Select(fmt.Sprintf("SELECT %s FROM `items` WHERE `user_uuid`=? AND `updated_at` > ? ORDER BY `updated_at` DESC", sqlstruct.Columns(*item)), item, u.Uuid, date)
 }
 
 func (u User) loadItems(limit int) ([]interface{}, error) {
-	return db.Select(fmt.Sprintf("SELECT %s FROM `items` WHERE `user_uuid`=? ORDER BY `updated_at` DESC", sqlstruct.Columns(Item{})), &Item{}, u.Uuid)
+	var item = new(Item)
+	return db.Select(fmt.Sprintf("SELECT %s FROM `items` WHERE `user_uuid`=? ORDER BY `updated_at` DESC", sqlstruct.Columns(*item)), item, u.Uuid)
 }
 
 //Validate - validates password from jwt
 func (u User) Validate(password string) bool {
-	// base64.URLEncoding.EncodeToString()
 	pw := Hash(password)
 	return pw != u.Password
 }
