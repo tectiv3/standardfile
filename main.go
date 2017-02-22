@@ -28,10 +28,11 @@ func main() {
 
 	r.POST("/api/items/sync", routing.SyncItems)
 	r.POST("/api/items/backup", routing.BackupItems)
-	r.DELETE("/api/items", routing.DeleteItems)
+	// r.DELETE("/api/items", routing.DeleteItems)
 
 	r.POST("/api/auth", routing.Registration)
 	r.PATCH("/api/auth", routing.ChangePassword)
+	r.POST("/api/auth/change_pw", routing.ChangePassword)
 	r.POST("/api/auth/sign_in", routing.Login)
 	r.GET("/api/auth/params", routing.GetParams)
 

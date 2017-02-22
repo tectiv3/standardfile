@@ -30,6 +30,12 @@ type User struct {
 	Updated_at  time.Time `json:"updated_at"`
 }
 
+//NewPassword - incomming json password change
+type NewPassword struct {
+	User
+	New_password string `json:"new_password"`
+}
+
 //UserClaims - jwt claims
 type UserClaims struct {
 	Uuid    string `json:"uuid"`
@@ -111,15 +117,22 @@ func (u *User) save() error {
 }
 
 //Update - update password
-func (u *User) Update(password string) error {
+func (u *User) Update(np NewPassword) error {
 	if u.Uuid == "" {
 		return fmt.Errorf("Unknown user")
 	}
 
-	u.Password = Hash(password)
-	u.Updated_at = time.Now()
+	u.Password = Hash(np.New_password)
+	u.Pw_func = np.Pw_func
+	u.Pw_alg = np.Pw_alg
+	u.Pw_cost = np.Pw_cost
+	u.Pw_key_size = np.Pw_key_size
+	u.Pw_nonce = np.Pw_nonce
 
-	err := db.Query("UPDATE `users` SET `password`=? WHERE `uuid`=?", u.Password, u.Uuid)
+	u.Updated_at = time.Now()
+	// TODO: validate incomming pw params
+	err := db.Query("UPDATE `users` SET `password`=?, `pw_func`=?, `pw_alg`=?, `pw_cost`=?, `pw_key_size`=?, `pw_nonce`=?, `updated_at`=? WHERE `uuid`=?", u.Password, u.Pw_func, u.Pw_alg, u.Pw_cost, u.Pw_key_size, u.Pw_nonce, u.Updated_at, u.Uuid)
+
 	if err != nil {
 		log.Println(err)
 		return err

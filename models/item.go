@@ -222,7 +222,7 @@ func (user User) SyncItems(request SyncRequest) (SyncResponse, error) {
 	}
 	if len(response.Saved) > 0 {
 		response.SyncToken = GetTokenFromTime(response.Saved[0].Updated_at)
-		// manage conflicts
+		// Check for conflicts
 		log.Println("Conflicts check")
 		response.Saved.checkForConflicts(&response.Retrieved)
 	}
@@ -297,9 +297,9 @@ func (items Items) save(userUUID string) (Items, []unsaved, error) {
 func _loadItems(result []interface{}, err error) (Items, error) {
 	items := Items{}
 	for _, item := range result {
-		log.Println("Loading...", item.(*Item).Uuid)
 		items = append(items, *item.(*Item))
 	}
+	log.Println("Loading...", len(items))
 	return items, err
 }
 

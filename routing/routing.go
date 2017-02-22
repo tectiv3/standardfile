@@ -94,8 +94,40 @@ func Dashboard(c *router.Control) {
 
 //ChangePassword - is the change password handler
 func ChangePassword(c *router.Control) {
+	user, err := authenticateUser(c)
+	if err != nil {
+		showError(c, err, http.StatusUnauthorized)
+		return
+	}
+	ct := c.Request.Header.Get("Content-Type")
+	mediatype, _, _ := mime.ParseMediaType(ct)
+	if mediatype == "application/json" {
+		np := models.NewPassword{}
+		if err := _parseRequest(c, &np); err != nil {
+			showError(c, err, http.StatusUnprocessableEntity)
+			return
+		}
+		if err := user.Update(np); err != nil {
+			showError(c, err, http.StatusInternalServerError)
+			return
+		}
+		// c.Code(http.StatusNoContent).Body("") //in spec
+		token, err := user.Login(user.Email, user.Password)
+		if err != nil {
+			showError(c, err, http.StatusUnauthorized)
+			return
+		}
+		c.Code(http.StatusAccepted).Body(data{"token": token, "user": user.ToJSON()})
+		return
+	}
 	//email,new_pw,old_pw
-	c.Code(http.StatusOK)
+	if err := c.Request.ParseForm(); err != nil {
+		showError(c, err, http.StatusUnauthorized)
+		return
+	}
+	fmt.Printf("%+v\n", c.Request.Form)
+	log.Println(user)
+	c.Code(http.StatusInternalServerError).Body("Unimplemented")
 }
 
 //Registration - is the registration handler
@@ -155,6 +187,7 @@ func SyncItems(c *router.Control) {
 	response, err := user.SyncItems(request)
 	if err != nil {
 		showError(c, err, http.StatusInternalServerError)
+		return
 	}
 	content, _ := json.MarshalIndent(response, "", "  ")
 	log.Println("Response:", string(content))
@@ -163,16 +196,6 @@ func SyncItems(c *router.Control) {
 
 //BackupItems - export items
 func BackupItems(c *router.Control) {
-	err := c.Request.ParseForm()
-	if err != nil {
-		showError(c, err, http.StatusInternalServerError)
-		return
-	}
-	fmt.Printf("%+v\n", c.Request.Form)
-}
-
-//DeleteItems - deletes items
-func DeleteItems(c *router.Control) {
 	err := c.Request.ParseForm()
 	if err != nil {
 		showError(c, err, http.StatusInternalServerError)
