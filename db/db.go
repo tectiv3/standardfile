@@ -6,6 +6,7 @@ import (
 	"log"
 	"reflect"
 
+	"github.com/kisielk/sqlstruct"
 	//importing init from sqlite3
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -38,7 +39,7 @@ func (db Database) prepare(q string) (stmt *sql.Stmt) {
 func (db Database) query(q string, args ...interface{}) (rows *sql.Rows) {
 	rows, err := db.db.Query(q, args...)
 	if err != nil {
-		log.Println(err)
+		log.Println("Query error:", err)
 		return nil
 	}
 	return rows
@@ -126,4 +127,30 @@ func SelectStruct(sql string, obj interface{}, args ...interface{}) (interface{}
 		return nil, err
 	}
 	return obj, nil
+}
+
+//Select - selects multiple results from the DB
+func Select(sql string, obj interface{}, args ...interface{}) (interface{}, error) {
+	log.Println("Query:", sql, args)
+	stmt := database.prepare(sql)
+	defer stmt.Close()
+	var err error
+	rows, err := stmt.Query(args...)
+	defer rows.Close()
+	var result []interface{}
+	log.Println("After query")
+	for rows.Next() {
+		log.Println("Before reflect")
+		t := reflect.TypeOf(obj).Elem()
+		log.Println("t:", t)
+		ms := reflect.New(t).Elem()
+		log.Println("MS:", ms)
+		// t := new(reflect.TypeOf(obj))
+		// t := reflect.TypeOf((*obj)(nil))
+		// t := reflect.TypeOf((*obj)(nil)).Elem()
+		err = sqlstruct.Scan(&ms, rows)
+		result = append(result, t)
+	}
+	log.Println("After rows")
+	return result, err
 }

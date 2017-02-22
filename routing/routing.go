@@ -15,9 +15,6 @@ import (
 	"github.com/tectiv3/standardfile/models"
 )
 
-//Auth - global variable
-var Auth *models.Session
-
 type data map[string]interface{}
 
 func showError(c *router.Control, err error, code int) {
@@ -51,8 +48,6 @@ func authenticateUser(c *router.Control) (models.User, error) {
 			return user, fmt.Errorf("Unknown user")
 		}
 		if user.Validate(claims.Pw_hash) {
-			Auth.User = user
-			log.Println("Auth user:", Auth.User.Uuid)
 			return user, nil
 		}
 		return user, fmt.Errorf("Old password used for authorisation")

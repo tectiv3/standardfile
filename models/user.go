@@ -11,6 +11,7 @@ import (
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/kisielk/sqlstruct"
 	"github.com/satori/go.uuid"
 	"github.com/tectiv3/standardfile/db"
 )
@@ -36,11 +37,6 @@ type UserClaims struct {
 	jwt.StandardClaims
 }
 
-//Session - handles current user session
-type Session struct {
-	User User
-}
-
 //SigningKey - export to routing
 var SigningKey = []byte{}
 
@@ -63,9 +59,6 @@ func NewUser() User {
 	user.Updated_at = time.Now()
 	return user
 }
-
-//Auth - global variable
-var Auth *Session
 
 //LoadValue - hydrate struct from map
 func (u *User) LoadValue(name string, value []string) {
@@ -244,19 +237,16 @@ func (u User) GetParams(email string) interface{} {
 	return params
 }
 
-func (u User) getItemsFromDate(date time.Time) (Items, error) {
-	// items = @user.items.order(:updated_at).where("updated_at >= ?", date)
-	return Items{}, nil
+func (u User) loadItemsFromDate(date time.Time) (interface{}, error) {
+	return db.Select(fmt.Sprintf("SELECT %s FROM `items` WHERE `user_uuid`=? AND `updated_at` >= ? ORDER BY `updated_at` DESC", sqlstruct.Columns(Item{})), Item{}, u.Uuid, date)
 }
 
-func (u User) getItemsOlder(date time.Time) (Items, error) {
-	// items = @user.items.order(:updated_at).where("updated_at > ?", date)
-	return Items{}, nil
+func (u User) loadItemsOlder(date time.Time) (interface{}, error) {
+	return db.Select(fmt.Sprintf("SELECT %s FROM `items` WHERE `user_uuid`=? AND `updated_at` > ? ORDER BY `updated_at` DESC", sqlstruct.Columns(Item{})), Item{}, u.Uuid, date)
 }
 
-func (u User) getItems(limit int) (Items, error) {
-	// items = @user.items.order(:updated_at)
-	return Items{}, nil
+func (u User) loadItems(limit int) (interface{}, error) {
+	return db.Select(fmt.Sprintf("SELECT %s FROM `items` WHERE `user_uuid`=? ORDER BY `updated_at` DESC", sqlstruct.Columns(Item{})), Item{}, u.Uuid)
 }
 
 //Validate - validates password from jwt

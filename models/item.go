@@ -11,6 +11,7 @@ import (
 
 	"github.com/deckarep/golang-set"
 	"github.com/satori/go.uuid"
+	"github.com/tectiv3/standardfile/db"
 )
 
 // Item - is an item type
@@ -18,12 +19,18 @@ type Item struct {
 	Uuid         string    `json:"uuid"`
 	User_uuid    string    `json:"user_uuid"`
 	Content      string    `json:"content"`
+	Content_type string    `json:"content_type"`
 	Enc_item_key string    `json:"enc_item_key"`
 	Auth_hash    string    `json:"auth_hash"`
-	Content_type string    `json:"content_type"`
 	Deleted      bool      `json:"deleted"`
 	Created_at   time.Time `json:"created_at"`
 	Updated_at   time.Time `json:"updated_at"`
+}
+
+type it interface {
+	create() error
+	update() error
+	delete() error
 }
 
 //Items - is an items slice
@@ -51,7 +58,7 @@ type SyncResponse struct {
 	CursorToken string    `json:"cursor_token,omitempty"`
 }
 
-const minConflictInterval = 5.0
+const minConflictInterval = 20.0
 
 //LoadValue - hydrate struct from map
 func (r *SyncRequest) LoadValue(name string, value []string) {
@@ -68,62 +75,101 @@ func (r *SyncRequest) LoadValue(name string, value []string) {
 }
 
 //LoadValue - hydrate struct from map
-func (i *Item) LoadValue(name string, value []string) {
+func (this *Item) LoadValue(name string, value []string) {
 	switch name {
 	case "uuid":
-		i.Uuid = value[0]
+		this.Uuid = value[0]
 	case "user_uuid":
-		i.User_uuid = value[0]
+		this.User_uuid = value[0]
 	case "content":
-		i.Content = value[0]
+		this.Content = value[0]
 	case "enc_item_key":
-		i.Enc_item_key = value[0]
+		this.Enc_item_key = value[0]
 	case "content_type":
-		i.Content_type = value[0]
+		this.Content_type = value[0]
 	case "auth_hash":
-		i.Content_type = value[0]
+		this.Content_type = value[0]
 	case "deleted":
-		i.Deleted = (value[0] == "true")
+		this.Deleted = (value[0] == "true")
 	}
 }
 
 //Save - save current item into DB
-func (i *Item) save() error {
-	if i.Uuid == "" || !i.Exists() {
-		return i.create()
+func (this *Item) save() error {
+	if this.Uuid == "" || !this.Exists() {
+		return this.create()
 	}
-	return i.update()
+	return this.update()
 }
 
-func (i *Item) create() error {
-	if i.Uuid == "" {
-		i.Uuid = uuid.NewV4().String()
+func (this *Item) create() error {
+	if this.Uuid == "" {
+		this.Uuid = uuid.NewV4().String()
 	}
-	i.Created_at = time.Now()
-	i.Updated_at = time.Now()
-	i.User_uuid = Auth.User.Uuid
-	log.Println("Create:", i)
-	return db.Query("INSERT INTO `items` (`uuid`, `user_uuid`, content,  content_type, enc_item_key, auth_hash, deleted, created_at, updated_at) VALUES(?,?,?,?,?,?,?,?,?)", i.Uuid, i.User_uuid, i.Content, i.Content_type, i.Enc_item_key, i.Auth_hash, i.Deleted, i.Created_at, i.Updated_at)
+	this.Created_at = time.Now()
+	this.Updated_at = time.Now()
+	log.Println("Create:", this)
+	return db.Query("INSERT INTO `items` (`uuid`, `user_uuid`, content,  content_type, enc_item_key, auth_hash, deleted, created_at, updated_at) VALUES(?,?,?,?,?,?,?,?,?)", this.Uuid, this.User_uuid, this.Content, this.Content_type, this.Enc_item_key, this.Auth_hash, this.Deleted, this.Created_at, this.Updated_at)
 }
 
-func (i Item) copy() Item {
-	i.Uuid = uuid.NewV4().String()
-	i.Updated_at = time.Now()
-	return i
+func (this *Item) update() error {
+	this.Updated_at = time.Now()
+
+	return db.Query("UPDATE `items` SET `content`=?, `enc_item_key`=?, `auth_hash`=?, `deleted`=?, `updated_at`=? WHERE `uuid`=? AND `user_uuid`=?", this.Content, this.Enc_item_key, this.Auth_hash, this.Deleted, this.Updated_at, this.Uuid, this.User_uuid)
 }
 
-func (i *Item) delete() error {
-	if i.Uuid == "" {
+func (this *Item) delete() error {
+	if this.Uuid == "" {
 		return fmt.Errorf("Trying to delete unexisting item")
-	} else {
-		// find_or_create by uuid
 	}
-	return nil
+	this.Content = ""
+	this.Enc_item_key = ""
+	this.Auth_hash = ""
+
+	return db.Query("UPDATE `items` SET `content`='', `enc_item_key`='', `auth_hash`='',`deleted`=1, `updated_at`=? WHERE `uuid`=? AND `user_uuid`=?", this.Updated_at, this.Uuid, this.User_uuid)
+}
+
+func (this Item) copy() (Item, error) {
+	this.Uuid = uuid.NewV4().String()
+	this.Updated_at = time.Now()
+	err := this.create()
+	if err != nil {
+		log.Println(err)
+		return Item{}, err
+	}
+	return this, nil
+}
+
+//Exists - checks if current user exists in DB
+func (this Item) Exists() bool {
+	if this.Uuid == "" {
+		return false
+	}
+	uuid, err := db.SelectFirst("SELECT `uuid` FROM `items` WHERE `uuid`=?", this.Uuid)
+
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+
+	return uuid != ""
+}
+
+//LoadByUUID - loads item info from DB
+func (this *Item) LoadByUUID(uuid string) bool {
+	_, err := db.SelectStruct("SELECT * FROM `items` WHERE `uuid`=?", this, uuid)
+
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+
+	return true
 }
 
 //GetTokenFromTime - generates sync token for current time
 func GetTokenFromTime(date time.Time) string {
-	return base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("1:%d", date.Unix())))
+	return base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("1:%d", date.UnixNano())))
 }
 
 //GetTimeFromToken - retreive datetime from sync token
@@ -133,14 +179,14 @@ func GetTimeFromToken(token string) time.Time {
 		log.Println(err)
 		return time.Now()
 	}
-	log.Println(decoded)
+	log.Println(string(decoded))
 	parts := strings.Split(string(decoded), ":")
 	str, err := strconv.Atoi(parts[1])
 	if err != nil {
 		log.Println(err)
 		return time.Now()
 	}
-	return time.Time(time.Unix(int64(str), 0))
+	return time.Time(time.Unix(0, int64(str)))
 }
 
 //SyncItems - sync manager
@@ -157,23 +203,19 @@ func (user User) SyncItems(request SyncRequest) (SyncResponse, error) {
 	if request.Limit == 0 {
 		request.Limit = 100000
 	}
-
-	response.SyncToken = GetTokenFromTime(time.Now())
 	var err error
-	var items Items
-	if request.CursorToken != "" {
-		items, err = user.getItemsFromDate(GetTimeFromToken(request.CursorToken))
-	} else if request.SyncToken != "" {
-		items, err = user.getItemsOlder(GetTimeFromToken(request.SyncToken))
-	} else {
-		items, err = user.getItems(request.Limit)
-		response.CursorToken = GetTokenFromTime(items[len(items)-1].Updated_at)
-	}
-	log.Println(items)
+	var cursorTime time.Time
+	log.Println("Get items")
+	response.Retrieved, cursorTime, err = user.getItems(request)
 	if err != nil {
 		return response, err
 	}
-	response.Saved, response.Unsaved, err = request.Items.save()
+	if !cursorTime.IsZero() {
+		response.CursorToken = GetTokenFromTime(cursorTime)
+	}
+
+	log.Println("Save items")
+	response.Saved, response.Unsaved, err = request.Items.save(user.Uuid)
 	if err != nil {
 		return response, err
 	}
@@ -181,13 +223,20 @@ func (user User) SyncItems(request SyncRequest) (SyncResponse, error) {
 		response.SyncToken = GetTokenFromTime(response.Saved[0].Updated_at)
 	}
 	// manage conflicts
+	log.Println("Conflicts check")
+	response.Saved.checkForConflicts(&response.Retrieved)
+
+	return response, nil
+}
+
+func (items Items) checkForConflicts(incoming *Items) {
 	saved := mapset.NewSet()
-	retreived := mapset.NewSet()
-	for _, item := range response.Retrieved {
-		retreived.Add(item.Uuid)
-	}
-	for _, item := range response.Saved {
+	for _, item := range items {
 		saved.Add(item.Uuid)
+	}
+	retreived := mapset.NewSet()
+	for _, item := range *incoming {
+		retreived.Add(item.Uuid)
 	}
 	conflicts := saved.Intersect(retreived)
 	log.Println("Conflicts", conflicts)
@@ -195,26 +244,28 @@ func (user User) SyncItems(request SyncRequest) (SyncResponse, error) {
 	for _, uuid := range conflicts.ToSlice() {
 		// if changes are greater than minConflictInterval seconds apart, create conflicted copy, otherwise discard conflicted
 		log.Println(uuid)
-		savedCopy := response.Saved.find(uuid.(string))
-		retreivedCopy := response.Retrieved.find(uuid.(string))
+		savedCopy := items.find(uuid.(string))
+		retreivedCopy := incoming.find(uuid.(string))
 
 		if savedCopy.isConflictedWith(retreivedCopy) {
 			log.Printf("Creating conflicted copy of %v\n", uuid)
-			dupe := retreivedCopy.copy()
-			response.Retrieved = append(response.Retrieved, dupe)
+			dupe, err := retreivedCopy.copy()
+			if err != nil {
+				log.Println(err)
+			} else {
+				*incoming = append(*incoming, dupe)
+			}
 		}
-		response.Retrieved.delete(uuid.(string))
+		incoming.delete(uuid.(string))
 	}
-
-	return response, nil
 }
 
-func (i Item) isConflictedWith(copy Item) bool {
-	diff := math.Abs(float64(i.Updated_at.Unix() - copy.Updated_at.Unix()))
+func (this Item) isConflictedWith(copy Item) bool {
+	diff := math.Abs(float64(this.Updated_at.Unix() - copy.Updated_at.Unix()))
 	return diff > minConflictInterval
 }
 
-func (items Items) save() (Items, []unsaved, error) {
+func (items Items) save(userUUID string) (Items, []unsaved, error) {
 	var savedItems Items
 	var unsavedItems []unsaved
 
@@ -225,6 +276,7 @@ func (items Items) save() (Items, []unsaved, error) {
 	for _, item := range items {
 		log.Println(item)
 		var err error
+		item.User_uuid = userUUID
 		if item.Deleted {
 			err = item.delete()
 		} else {
@@ -237,6 +289,26 @@ func (items Items) save() (Items, []unsaved, error) {
 		}
 	}
 	return savedItems, unsavedItems, nil
+}
+
+func (user User) getItems(request SyncRequest) (items Items, cursorTime time.Time, err error) {
+	var result interface{}
+	if request.CursorToken != "" {
+		log.Println("loadItemsFromDate")
+		result, err = user.loadItemsFromDate(GetTimeFromToken(request.CursorToken))
+	} else if request.SyncToken != "" {
+		log.Println("loadItemsOlder")
+		result, err = user.loadItemsOlder(GetTimeFromToken(request.SyncToken))
+	} else {
+		log.Println("loadItems")
+		result, err = user.loadItems(request.Limit)
+		items = result.(Items)
+		cursorTime = items[len(items)-1].Updated_at
+	}
+	log.Println(result)
+	// items = result.([]Item)
+	// log.Println("Result items:", items)
+	return items, cursorTime, err
 }
 
 func (items Items) find(uuid string) Item {

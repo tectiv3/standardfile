@@ -4,12 +4,8 @@ import (
 	"log"
 
 	"github.com/takama/router"
-	"github.com/tectiv3/standardfile/models"
 	"github.com/tectiv3/standardfile/routing"
 )
-
-//Auth - global variable
-var Auth models.Session
 
 func logger(handle router.Handle) router.Handle {
 	return func(c *router.Control) {
@@ -18,15 +14,15 @@ func logger(handle router.Handle) router.Handle {
 	}
 }
 
-func init() {
-	Auth.User = models.NewUser()
-	models.Auth = &Auth
-	routing.Auth = &Auth
+func panicHandler(c *router.Control, err interface{}) {
+	log.Println(err)
+	c.Code(500).Body("")
 }
 
 func main() {
 	r := router.New()
 	r.CustomHandler = logger
+	r.PanicHandler = panicHandler
 
 	r.GET("/", routing.Dashboard)
 
