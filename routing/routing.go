@@ -165,11 +165,15 @@ func Login(c *router.Control) {
 func GetParams(c *router.Control) {
 	user := models.NewUser()
 	email := c.Request.FormValue("email")
+	log.Println("Request:", string(email))
 	if email == "" {
 		showError(c, fmt.Errorf("Empty email"), http.StatusUnauthorized)
 		return
 	}
 	params := user.GetParams(email)
+
+	content, _ := json.MarshalIndent(params, "", "  ")
+	log.Println("Response:", string(content))
 	c.Code(200).Body(params)
 }
 
