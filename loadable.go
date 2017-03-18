@@ -1,4 +1,4 @@
-package models
+package main
 
 //Loadable - interface for hydration
 type Loadable interface {

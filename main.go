@@ -4,7 +4,6 @@ import (
 	"log"
 
 	"github.com/takama/router"
-	"github.com/tectiv3/standardfile/routing"
 )
 
 func logger(handle router.Handle) router.Handle {
@@ -24,18 +23,18 @@ func main() {
 	r.CustomHandler = logger
 	r.PanicHandler = panicHandler
 
-	r.GET("/", routing.Dashboard)
+	r.GET("/", Dashboard)
 
-	r.POST("/api/items/sync", routing.SyncItems)
-	r.POST("/api/items/backup", routing.BackupItems)
-	// r.DELETE("/api/items", routing.DeleteItems)
+	r.POST("/api/items/sync", SyncItems)
+	r.POST("/api/items/backup", BackupItems)
+	// r.DELETE("/api/items", DeleteItems)
 
-	r.POST("/api/auth", routing.Registration)
-	r.PATCH("/api/auth", routing.ChangePassword)
-	r.POST("/api/auth/change_pw", routing.ChangePassword)
-	r.POST("/api/auth/sign_in", routing.Login)
-	r.POST("/api/auth/sign_in.json", routing.Login)
-	r.GET("/api/auth/params", routing.GetParams)
+	r.POST("/api/auth", Registration)
+	r.PATCH("/api/auth", ChangePassword)
+	r.POST("/api/auth/change_pw", ChangePassword)
+	r.POST("/api/auth/sign_in", Login)
+	r.POST("/api/auth/sign_in.json", Login)
+	r.GET("/api/auth/params", GetParams)
 
 	log.Println("Running on port 8888")
 	r.Listen(":8888")

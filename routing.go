@@ -1,4 +1,4 @@
-package routing
+package main
 
 import (
 	"encoding/json"
@@ -12,7 +12,6 @@ import (
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/takama/router"
-	"github.com/tectiv3/standardfile/models"
 )
 
 type data map[string]interface{}
@@ -22,26 +21,26 @@ func showError(c *router.Control, err error, code int) {
 	c.Code(code).Body(data{"errors": []string{err.Error()}})
 }
 
-func authenticateUser(c *router.Control) (models.User, error) {
-	var user = models.NewUser()
+func authenticateUser(c *router.Control) (User, error) {
+	var user = NewUser()
 
 	authHeaderParts := strings.Split(c.Request.Header.Get("Authorization"), " ")
 	if len(authHeaderParts) != 2 || strings.ToLower(authHeaderParts[0]) != "bearer" {
 		return user, fmt.Errorf("Missing authorization header")
 	}
 
-	token, err := jwt.ParseWithClaims(authHeaderParts[1], &models.UserClaims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(authHeaderParts[1], &UserClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		return models.SigningKey, nil
+		return SigningKey, nil
 	})
 
 	if err != nil {
 		return user, err
 	}
 
-	if claims, ok := token.Claims.(*models.UserClaims); ok && token.Valid {
+	if claims, ok := token.Claims.(*UserClaims); ok && token.Valid {
 		log.Println("Token is valid, claims: ", claims)
 		ok = user.LoadByUUID(claims.Uuid)
 		if !ok {
@@ -58,7 +57,7 @@ func authenticateUser(c *router.Control) (models.User, error) {
 }
 
 //_parseRequest - is an internal function to parse json from request into local struct
-func _parseRequest(c *router.Control, value models.Loadable) error {
+func _parseRequest(c *router.Control, value Loadable) error {
 	r := c.Request
 	ct := r.Header.Get("Content-Type")
 	mediatype, _, _ := mime.ParseMediaType(ct)
@@ -83,7 +82,7 @@ func _parseRequest(c *router.Control, value models.Loadable) error {
 			return err
 		}
 		fmt.Printf("%+v\n", r.Form)
-		models.Hydrate(value, r.Form)
+		Hydrate(value, r.Form)
 	}
 	return nil
 }
@@ -103,7 +102,7 @@ func ChangePassword(c *router.Control) {
 	ct := c.Request.Header.Get("Content-Type")
 	mediatype, _, _ := mime.ParseMediaType(ct)
 	if mediatype == "application/json" {
-		np := models.NewPassword{}
+		np := NewPassword{}
 		if err := _parseRequest(c, &np); err != nil {
 			showError(c, err, http.StatusUnprocessableEntity)
 			return
@@ -133,7 +132,7 @@ func ChangePassword(c *router.Control) {
 
 //Registration - is the registration handler
 func Registration(c *router.Control) {
-	var user = models.NewUser()
+	var user = NewUser()
 	if err := _parseRequest(c, &user); err != nil {
 		showError(c, err, http.StatusUnprocessableEntity)
 		return
@@ -148,12 +147,13 @@ func Registration(c *router.Control) {
 
 //Login - is the login handler
 func Login(c *router.Control) {
-	var user = models.NewUser()
+	var user = NewUser()
 	if err := _parseRequest(c, &user); err != nil {
 		showError(c, err, http.StatusUnprocessableEntity)
 		return
 	}
-	token, err := user.Login(user.Email, models.Hash(user.Password))
+	log.Println(user)
+	token, err := user.Login(user.Email, Hash(user.Password))
 	if err != nil {
 		showError(c, err, http.StatusUnauthorized)
 		return
@@ -163,7 +163,7 @@ func Login(c *router.Control) {
 
 //GetParams - is the get auth parameters handler
 func GetParams(c *router.Control) {
-	user := models.NewUser()
+	user := NewUser()
 	email := c.Request.FormValue("email")
 	log.Println("Request:", string(email))
 	if email == "" {
@@ -184,7 +184,7 @@ func SyncItems(c *router.Control) {
 		showError(c, err, http.StatusUnauthorized)
 		return
 	}
-	var request models.SyncRequest
+	var request SyncRequest
 	if e := _parseRequest(c, &request); e != nil {
 		showError(c, e, http.StatusUnprocessableEntity)
 		return
