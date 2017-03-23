@@ -216,7 +216,7 @@ func (user User) SyncItems(request SyncRequest) (SyncResponse, error) {
 	if !cursorTime.IsZero() {
 		response.CursorToken = GetTokenFromTime(cursorTime)
 	}
-	log.Println("Save incoming items")
+	log.Println("Save incoming items", request)
 	response.Saved, response.Unsaved, err = request.Items.save(user.Uuid)
 	if err != nil {
 		return response, err
@@ -320,7 +320,9 @@ func (user User) getItems(request SyncRequest) (items Items, cursorTime time.Tim
 	} else {
 		log.Println("loadItems")
 		items, err = _loadItems(user.loadItems(request.Limit))
-		cursorTime = items[len(items)-1].Updated_at
+		if len(items) > 0 {
+			cursorTime = items[len(items)-1].Updated_at
+		}
 	}
 	return items, cursorTime, err
 }

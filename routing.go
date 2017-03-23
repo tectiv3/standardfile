@@ -153,7 +153,7 @@ func Login(c *router.Control) {
 		return
 	}
 	log.Println(user)
-	token, err := user.Login(user.Email, Hash(user.Password))
+	token, err := user.Login(user.Email, user.Password)
 	if err != nil {
 		showError(c, err, http.StatusUnauthorized)
 		return

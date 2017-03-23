@@ -170,7 +170,7 @@ func (u User) Exists() bool {
 
 //Login - logins user
 func (u *User) Login(email, password string) (string, error) {
-	u.loadByEmailAndPassword(email, password)
+	u.loadByEmailAndPassword(email, Hash(password))
 
 	if u.Uuid == "" {
 		return "", fmt.Errorf("Invalid email or password")
