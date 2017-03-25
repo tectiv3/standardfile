@@ -4,7 +4,6 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -109,7 +108,7 @@ func (u *User) save() error {
 	err := db.Query("INSERT INTO users (uuid, email, password, pw_func, pw_alg, pw_cost, pw_key_size, pw_nonce, created_at, updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)", u.Uuid, u.Email, u.Password, u.Pw_func, u.Pw_alg, u.Pw_cost, u.Pw_key_size, u.Pw_nonce, u.Created_at, u.Updated_at)
 
 	if err != nil {
-		log.Println(err)
+		Log(err)
 		return err
 	}
 
@@ -134,7 +133,7 @@ func (u *User) Update(np NewPassword) error {
 	err := db.Query("UPDATE `users` SET `password`=?, `pw_func`=?, `pw_alg`=?, `pw_cost`=?, `pw_key_size`=?, `pw_nonce`=?, `updated_at`=? WHERE `uuid`=?", u.Password, u.Pw_func, u.Pw_alg, u.Pw_cost, u.Pw_key_size, u.Pw_nonce, u.Updated_at, u.Uuid)
 
 	if err != nil {
-		log.Println(err)
+		Log(err)
 		return err
 	}
 
@@ -161,7 +160,7 @@ func (u User) Exists() bool {
 	uuid, err := db.SelectFirst("SELECT `uuid` FROM `users` WHERE `email`=?", u.Email)
 
 	if err != nil {
-		log.Println(err)
+		Log(err)
 		return false
 	}
 
@@ -188,7 +187,7 @@ func (u *User) Login(email, password string) (string, error) {
 func (u *User) LoadByUUID(uuid string) bool {
 	_, err := db.SelectStruct("SELECT * FROM `users` WHERE `uuid`=?", u, uuid)
 	if err != nil {
-		log.Println(err)
+		Log(err)
 		return false
 	}
 
@@ -217,14 +216,14 @@ func (u User) CreateToken() (string, error) {
 func (u *User) loadByEmail(email string) {
 	_, err := db.SelectStruct("SELECT * FROM `users` WHERE `email`=?", u, email)
 	if err != nil {
-		log.Println(err)
+		Log(err)
 	}
 }
 
 func (u *User) loadByEmailAndPassword(email, password string) {
 	_, err := db.SelectStruct("SELECT * FROM `users` WHERE `email`=? AND `password`=?", u, email, password)
 	if err != nil {
-		log.Println(err)
+		Log(err)
 	}
 }
 

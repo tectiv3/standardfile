@@ -3,39 +3,31 @@ package main
 import (
 	"log"
 
-	"github.com/takama/router"
+	"github.com/go-playground/pure"
+	mw "github.com/go-playground/pure/examples/middleware/logging-recovery"
+	"net/http"
 )
 
-func logger(handle router.Handle) router.Handle {
-	return func(c *router.Control) {
-		log.Printf("%s\t%s", c.Request.Method, c.Request.RequestURI)
-		handle(c)
-	}
-}
-
-func panicHandler(c *router.Control, err interface{}) {
-	log.Println(err)
-	c.Code(500).Body("")
-}
+const DEBUG = false
 
 func main() {
-	r := router.New()
-	r.CustomHandler = logger
-	r.PanicHandler = panicHandler
+	r := pure.New()
 
-	r.GET("/", Dashboard)
+	r.Use(mw.LoggingAndRecovery(true))
 
-	r.POST("/api/items/sync", SyncItems)
-	r.POST("/api/items/backup", BackupItems)
+	r.Get("/", Dashboard)
+
+	r.Post("/api/items/sync", SyncItems)
+	r.Post("/api/items/backup", BackupItems)
 	// r.DELETE("/api/items", DeleteItems)
 
-	r.POST("/api/auth", Registration)
-	r.PATCH("/api/auth", ChangePassword)
-	r.POST("/api/auth/change_pw", ChangePassword)
-	r.POST("/api/auth/sign_in", Login)
-	r.POST("/api/auth/sign_in.json", Login)
-	r.GET("/api/auth/params", GetParams)
+	r.Post("/api/auth", Registration)
+	r.Patch("/api/auth", ChangePassword)
+	r.Post("/api/auth/change_pw", ChangePassword)
+	r.Post("/api/auth/sign_in", Login)
+	r.Post("/api/auth/sign_in.json", Login)
+	r.Get("/api/auth/params", GetParams)
 
 	log.Println("Running on port 8888")
-	r.Listen(":8888")
+	http.ListenAndServe(":8888", r.Serve())
 }

@@ -79,15 +79,15 @@ func Query(sql string, args ...interface{}) error {
 	tx := database.begin()
 	_, err = tx.Stmt(stmt).Exec(args...)
 	if err != nil {
-		log.Println("Query: ", err)
+		// log.Println("Query: ", err)
 		tx.Rollback()
 	} else {
 		err = tx.Commit()
 		if err != nil {
-			log.Println("Commit error:", err)
+			// log.Println("Commit error:", err)
 			return err
 		}
-		log.Println("Commit successful")
+		// log.Println("Commit successful")
 	}
 	return err
 }

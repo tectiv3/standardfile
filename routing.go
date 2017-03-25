@@ -3,28 +3,31 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
-	"mime"
 	"net/http"
 	"strings"
 
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/takama/router"
+	"github.com/go-playground/pure"
 )
 
 type data map[string]interface{}
 
-func showError(c *router.Control, err error, code int) {
-	log.Println(err)
-	c.Code(code).Body(data{"errors": []string{err.Error()}})
+func Log(v ...interface{}) {
+	if DEBUG {
+		log.Println(v...)
+	}
 }
 
-func authenticateUser(c *router.Control) (User, error) {
+func showError(w http.ResponseWriter, err error, code int) {
+	log.Println(err)
+	pure.JSON(w, code, data{"errors": []string{err.Error()}})
+}
+
+func authenticateUser(r *http.Request) (User, error) {
 	var user = NewUser()
 
-	authHeaderParts := strings.Split(c.Request.Header.Get("Authorization"), " ")
+	authHeaderParts := strings.Split(r.Header.Get("Authorization"), " ")
 	if len(authHeaderParts) != 2 || strings.ToLower(authHeaderParts[0]) != "bearer" {
 		return user, fmt.Errorf("Missing authorization header")
 	}
@@ -41,7 +44,7 @@ func authenticateUser(c *router.Control) (User, error) {
 	}
 
 	if claims, ok := token.Claims.(*UserClaims); ok && token.Valid {
-		log.Println("Token is valid, claims: ", claims)
+		Log("Token is valid, claims: ", claims)
 		ok = user.LoadByUUID(claims.Uuid)
 		if !ok {
 			return user, fmt.Errorf("Unknown user")
@@ -56,155 +59,115 @@ func authenticateUser(c *router.Control) (User, error) {
 	return user, fmt.Errorf("Invalid token")
 }
 
-//_parseRequest - is an internal function to parse json from request into local struct
-func _parseRequest(c *router.Control, value Loadable) error {
-	r := c.Request
-	ct := r.Header.Get("Content-Type")
-	mediatype, _, _ := mime.ParseMediaType(ct)
-	if mediatype == "application/json" {
-		body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
-		if err != nil {
-			return err
-		}
-		if err := r.Body.Close(); err != nil {
-			return err
-		}
-		if len(body) == 0 {
-			return fmt.Errorf("Empty request")
-		}
-		log.Println("Request:", string(body))
-		if err := json.Unmarshal(body, &value); err != nil {
-			return err
-		}
-	} else {
-		err := r.ParseForm()
-		if err != nil {
-			return err
-		}
-		fmt.Printf("%+v\n", r.Form)
-		Hydrate(value, r.Form)
-	}
-	return nil
-}
-
 //Dashboard - is the root handler
-func Dashboard(c *router.Control) {
-	c.Code(http.StatusOK).Body("Standard File")
+func Dashboard(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Dashboard"))
 }
 
 //ChangePassword - is the change password handler
-func ChangePassword(c *router.Control) {
-	user, err := authenticateUser(c)
+func ChangePassword(w http.ResponseWriter, r *http.Request) {
+	user, err := authenticateUser(r)
 	if err != nil {
-		showError(c, err, http.StatusUnauthorized)
+		showError(w, err, http.StatusUnauthorized)
 		return
 	}
-	ct := c.Request.Header.Get("Content-Type")
-	mediatype, _, _ := mime.ParseMediaType(ct)
-	if mediatype == "application/json" {
-		np := NewPassword{}
-		if err := _parseRequest(c, &np); err != nil {
-			showError(c, err, http.StatusUnprocessableEntity)
-			return
-		}
-		if err := user.Update(np); err != nil {
-			showError(c, err, http.StatusInternalServerError)
-			return
-		}
-		// c.Code(http.StatusNoContent).Body("") //in spec
-		token, err := user.Login(user.Email, user.Password)
-		if err != nil {
-			showError(c, err, http.StatusUnauthorized)
-			return
-		}
-		c.Code(http.StatusAccepted).Body(data{"token": token, "user": user.ToJSON()})
+	np := NewPassword{}
+	if err := pure.Decode(r, true, 104857600, &np); err != nil {
+		showError(w, err, http.StatusUnprocessableEntity)
 		return
 	}
-	//email,new_pw,old_pw
-	if err := c.Request.ParseForm(); err != nil {
-		showError(c, err, http.StatusUnauthorized)
+	Log("Request:", user)
+
+	if err := user.Update(np); err != nil {
+		showError(w, err, http.StatusInternalServerError)
 		return
 	}
-	fmt.Printf("%+v\n", c.Request.Form)
-	log.Println(user)
-	c.Code(http.StatusInternalServerError).Body("Unimplemented")
+	// c.Code(http.StatusNoContent).Body("") //in spec
+	token, err := user.Login(user.Email, user.Password)
+	if err != nil {
+		showError(w, err, http.StatusUnauthorized)
+		return
+	}
+	pure.JSON(w, http.StatusAccepted, data{"token": token, "user": user.ToJSON()})
 }
 
 //Registration - is the registration handler
-func Registration(c *router.Control) {
+func Registration(w http.ResponseWriter, r *http.Request) {
 	var user = NewUser()
-	if err := _parseRequest(c, &user); err != nil {
-		showError(c, err, http.StatusUnprocessableEntity)
+	if err := pure.Decode(r, true, 104857600, &user); err != nil {
+		showError(w, err, http.StatusUnprocessableEntity)
 		return
 	}
+	Log("Request:", user)
 	token, err := user.Register()
 	if err != nil {
-		showError(c, err, http.StatusUnprocessableEntity)
+		showError(w, err, http.StatusUnprocessableEntity)
 		return
 	}
-	c.Code(http.StatusCreated).Body(data{"token": token, "user": user.ToJSON()})
+	pure.JSON(w, http.StatusCreated, data{"token": token, "user": user.ToJSON()})
 }
 
 //Login - is the login handler
-func Login(c *router.Control) {
+func Login(w http.ResponseWriter, r *http.Request) {
 	var user = NewUser()
-	if err := _parseRequest(c, &user); err != nil {
-		showError(c, err, http.StatusUnprocessableEntity)
+	if err := pure.Decode(r, true, 104857600, &user); err != nil {
+		showError(w, err, http.StatusUnprocessableEntity)
 		return
 	}
-	log.Println(user)
+	Log("Request:", user)
 	token, err := user.Login(user.Email, user.Password)
 	if err != nil {
-		showError(c, err, http.StatusUnauthorized)
+		showError(w, err, http.StatusUnauthorized)
 		return
 	}
-	c.Code(http.StatusAccepted).Body(data{"token": token, "user": user.ToJSON()})
+	pure.JSON(w, http.StatusAccepted, data{"token": token, "user": user.ToJSON()})
 }
 
 //GetParams - is the get auth parameters handler
-func GetParams(c *router.Control) {
+func GetParams(w http.ResponseWriter, r *http.Request) {
 	user := NewUser()
-	email := c.Request.FormValue("email")
-	log.Println("Request:", string(email))
+	email := r.FormValue("email")
+	Log("Request:", string(email))
 	if email == "" {
-		showError(c, fmt.Errorf("Empty email"), http.StatusUnauthorized)
+		showError(w, fmt.Errorf("Empty email"), http.StatusUnauthorized)
 		return
 	}
 	params := user.GetParams(email)
-
 	content, _ := json.MarshalIndent(params, "", "  ")
-	log.Println("Response:", string(content))
-	c.Code(200).Body(params)
+	Log("Response:", string(content))
+	pure.JSON(w, http.StatusOK, params)
 }
 
 //SyncItems - is the items sync handler
-func SyncItems(c *router.Control) {
-	user, err := authenticateUser(c)
+func SyncItems(w http.ResponseWriter, r *http.Request) {
+	user, err := authenticateUser(r)
 	if err != nil {
-		showError(c, err, http.StatusUnauthorized)
+		showError(w, err, http.StatusUnauthorized)
 		return
 	}
 	var request SyncRequest
-	if e := _parseRequest(c, &request); e != nil {
-		showError(c, e, http.StatusUnprocessableEntity)
+	if err := pure.Decode(r, true, 104857600, &request); err != nil {
+		showError(w, err, http.StatusUnprocessableEntity)
 		return
 	}
+	Log("Request:", request)
 	response, err := user.SyncItems(request)
 	if err != nil {
-		showError(c, err, http.StatusInternalServerError)
+		showError(w, err, http.StatusInternalServerError)
 		return
 	}
 	content, _ := json.MarshalIndent(response, "", "  ")
-	log.Println("Response:", string(content))
-	c.Code(http.StatusAccepted).Body(response)
+	Log("Response:", string(content))
+	pure.JSON(w, http.StatusAccepted, response)
 }
 
 //BackupItems - export items
-func BackupItems(c *router.Control) {
-	err := c.Request.ParseForm()
+func BackupItems(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
 	if err != nil {
-		showError(c, err, http.StatusInternalServerError)
+		showError(w, err, http.StatusInternalServerError)
 		return
 	}
-	fmt.Printf("%+v\n", c.Request.Form)
+	fmt.Printf("%+v\n", r.Form)
 }
