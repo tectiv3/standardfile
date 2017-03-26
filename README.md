@@ -20,7 +20,8 @@ This server implementation is built with Go and can be deployed in seconds.
 1. Initialize project:
 
 ```
-  go install github.com/tectiv3/standardfile
+go get github.com/tectiv3/standardfile
+go install github.com/tectiv3/standardfile
 ```
 
 2. Start the server:
