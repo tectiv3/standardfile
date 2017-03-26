@@ -10,7 +10,6 @@ import (
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/kisielk/sqlstruct"
 	"github.com/satori/go.uuid"
 	"github.com/tectiv3/standardfile/db"
 )
@@ -247,21 +246,6 @@ func (u User) GetParams(email string) interface{} {
 	params["pw_salt"] = strings.Replace(fmt.Sprintf("% x", sha1.Sum([]byte(salt))), " ", "", -1)
 
 	return params
-}
-
-func (u User) loadItemsFromDate(date time.Time) ([]interface{}, error) {
-	var item = new(Item)
-	return db.Select(fmt.Sprintf("SELECT %s FROM `items` WHERE `user_uuid`=? AND `updated_at` >= ? ORDER BY `updated_at` DESC", sqlstruct.Columns(*item)), item, u.Uuid, date)
-}
-
-func (u User) loadItemsOlder(date time.Time) ([]interface{}, error) {
-	var item = new(Item)
-	return db.Select(fmt.Sprintf("SELECT %s FROM `items` WHERE `user_uuid`=? AND `updated_at` > ? ORDER BY `updated_at` DESC", sqlstruct.Columns(*item)), item, u.Uuid, date)
-}
-
-func (u User) loadItems(limit int) ([]interface{}, error) {
-	var item = new(Item)
-	return db.Select(fmt.Sprintf("SELECT %s FROM `items` WHERE `user_uuid`=? ORDER BY `updated_at` DESC", sqlstruct.Columns(*item)), item, u.Uuid)
 }
 
 //Validate - validates password from jwt

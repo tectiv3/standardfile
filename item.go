@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/deckarep/golang-set"
+	"github.com/kisielk/sqlstruct"
 	"github.com/satori/go.uuid"
 	"github.com/tectiv3/standardfile/db"
 )
@@ -323,6 +324,21 @@ func (user User) getItems(request SyncRequest) (items Items, cursorTime time.Tim
 		}
 	}
 	return items, cursorTime, err
+}
+
+func (u User) loadItemsFromDate(date time.Time) ([]interface{}, error) {
+	var item = new(Item)
+	return db.Select(fmt.Sprintf("SELECT %s FROM `items` WHERE `user_uuid`=? AND `updated_at` >= ? ORDER BY `updated_at` DESC", sqlstruct.Columns(*item)), item, u.Uuid, date)
+}
+
+func (u User) loadItemsOlder(date time.Time) ([]interface{}, error) {
+	var item = new(Item)
+	return db.Select(fmt.Sprintf("SELECT %s FROM `items` WHERE `user_uuid`=? AND `updated_at` > ? ORDER BY `updated_at` DESC", sqlstruct.Columns(*item)), item, u.Uuid, date)
+}
+
+func (u User) loadItems(limit int) ([]interface{}, error) {
+	var item = new(Item)
+	return db.Select(fmt.Sprintf("SELECT %s FROM `items` WHERE `user_uuid`=? ORDER BY `updated_at` DESC", sqlstruct.Columns(*item)), item, u.Uuid)
 }
 
 func (items Items) find(uuid string) Item {
