@@ -19,45 +19,27 @@ This server implementation is built with Go and can be deployed in seconds.
 
 1. Initialize project:
 
-	```
+```
   go install github.com/tectiv3/standardfile
-	```
+```
 
 2. Start the server:
 
-	```
-  standardfile
-	```
+```
+standardfile
+```
 
-### Deploying to a live server
+3. Stop the server:
 
-#todo
+```
+standardfile -s stop
+```
 
 ### Environment variables
 
 **SECRET_KEY_BASE**
 
 JWT secret key
-
-**DB_HOST**
-
-Database host.
-
-**DB_PORT**
-
-Database port. 3306 is standard.
-
-**DB_DATABASE**
-
-Database name.
-
-**DB_USERNAME**
-
-Database username.
-
-**DB_PASSWORD**
-
-Database password.
 
 ## Contributing
 Contributions are encouraged and welcome. Currently outstanding items:
