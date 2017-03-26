@@ -12,7 +12,7 @@ This server implementation is built with Go and can be deployed in seconds.
 
 **Requirements**
 
-- Go 1.7.5+
+- Go 1.7+
 - SQLite3 database
 
 **Instructions**
@@ -35,8 +35,49 @@ standardfile
 ```
 standardfile -s stop
 ```
+### Configuration options
 
-### Environment variables
+# Customize port and database location
+```
+-p 8080
+```
+and
+```
+-db /var/lib/sf.db
+```
+default port is `8888` and database file named `sf.db` will be created in working directory
+
+### Deploying to a live server
+I suggest putting it behind nginx with https enabled location
+```
+server {
+    server_name sf.example.com;
+    listen 80;
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    server_name sf.example.com;
+    listen 443 ssl http2;
+
+    ssl_certificate /etc/letsencrypt/live/sf.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/sf.example.com/privkey.pem;
+
+    include snippets/ssl-params.conf;
+	
+    location / {
+
+         proxy_set_header        Host $host;
+         proxy_set_header        X-Real-IP $remote_addr;
+         proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+         proxy_set_header        X-Forwarded-Proto $scheme;
+
+         proxy_pass          http://localhost:8888;
+         proxy_read_timeout  90;
+    }
+}
+```
+### Optional Environment variables
 
 **SECRET_KEY_BASE**
 
