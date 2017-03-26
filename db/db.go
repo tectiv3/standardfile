@@ -26,21 +26,13 @@ func (db Database) begin() (tx *sql.Tx) {
 }
 
 func (db Database) prepare(q string) (stmt *sql.Stmt) {
+	// log.Println("Query:", q)
 	stmt, err := db.db.Prepare(q)
 	if err != nil {
 		log.Println(err)
 		return nil
 	}
 	return stmt
-}
-
-func (db Database) query(q string, args ...interface{}) (rows *sql.Rows) {
-	rows, err := db.db.Query(q, args...)
-	if err != nil {
-		log.Println("Query error:", err)
-		return nil
-	}
-	return rows
 }
 
 func (db Database) createTables() {
@@ -73,28 +65,19 @@ func init() {
 
 //Query db function
 func Query(sql string, args ...interface{}) error {
-	// log.Println("Query:", sql)
 	stmt := database.prepare(sql)
 	defer stmt.Close()
 	tx := database.begin()
-	_, err = tx.Stmt(stmt).Exec(args...)
-	if err != nil {
-		// log.Println("Query: ", err)
+	if _, err := tx.Stmt(stmt).Exec(args...); err != nil {
+		log.Println("Query error: ", err)
 		tx.Rollback()
-	} else {
-		err = tx.Commit()
-		if err != nil {
-			// log.Println("Commit error:", err)
-			return err
-		}
-		// log.Println("Commit successful")
 	}
+	err := tx.Commit()
 	return err
 }
 
 //SelectFirst - selects first result from a row
 func SelectFirst(sql string, args ...interface{}) (interface{}, error) {
-	// log.Println("Query:", sql, args)
 	stmt := database.prepare(sql)
 	defer stmt.Close()
 	var result string
@@ -107,15 +90,12 @@ func SelectFirst(sql string, args ...interface{}) (interface{}, error) {
 
 //SelectStruct - returns selected result as struct
 func SelectStruct(sql string, obj interface{}, args ...interface{}) (interface{}, error) {
-	// log.Println("Query:", sql, args)
 	destv := reflect.ValueOf(obj)
 	elem := destv.Elem()
 	typeOfObj := elem.Type()
-	// log.Println("Typeofobj:", typeOfObj)
 
 	var values []interface{}
 	for i := 0; i < elem.NumField(); i++ {
-		// log.Println(typeOfObj.Field(i).Name)
 		values = append(values, elem.FieldByName(typeOfObj.Field(i).Name).Addr().Interface())
 	}
 
@@ -125,22 +105,14 @@ func SelectStruct(sql string, obj interface{}, args ...interface{}) (interface{}
 	if err != nil {
 		return nil, err
 	}
-
 	return obj, nil
 }
 
 //Select - selects multiple results from the DB
 func Select(sql string, obj interface{}, args ...interface{}) (result []interface{}, err error) {
-	// log.Println("Query:", sql, args)
-
 	destv := reflect.ValueOf(obj)
 	elem := destv.Elem()
 	typeOfObj := elem.Type()
-	// log.Println("destv", destv)             // reference
-	// log.Println("elem", elem)               // real value of obj
-	// log.Println("elem i", elem.Interface()) // save as above
-	// log.Println("Typeof", typeOfObj)        // interface is here if passed by reference - question: why??!
-
 	stmt := database.prepare(sql)
 	defer stmt.Close()
 
@@ -148,8 +120,7 @@ func Select(sql string, obj interface{}, args ...interface{}) (result []interfac
 	defer rows.Close()
 
 	for rows.Next() {
-		var o = reflect.New(typeOfObj).Interface() //creating new object of same type as input
-		//o is a !!pointer!! to struct wich would receive data, why is it working with interface then?
+		var o = reflect.New(typeOfObj).Interface()
 		err = sqlstruct.Scan(o, rows)
 		result = append(result, o)
 	}
