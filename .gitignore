@@ -1,3 +1,5 @@
 standardfile
 .DS_Store
 db/sf.db
+pid
+log

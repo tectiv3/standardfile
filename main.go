@@ -1,33 +1,66 @@
 package main
 
 import (
+	"flag"
+	"github.com/sevlyar/go-daemon"
 	"log"
-
-	"github.com/go-playground/pure"
-	mw "github.com/go-playground/pure/examples/middleware/logging-recovery"
-	"net/http"
+	"os"
+	"syscall"
 )
 
-const DEBUG = false
+const DEBUG = true
+
+var (
+	signal = flag.String("s", "", `stop — shutdown
+reload — reloading the configuration file`)
+	run = make(chan bool)
+)
 
 func main() {
-	r := pure.New()
+	flag.Parse()
+	daemon.AddCommand(daemon.StringFlag(signal, "stop"), syscall.SIGTERM, termHandler)
+	daemon.AddCommand(daemon.StringFlag(signal, "reload"), syscall.SIGHUP, reloadHandler)
 
-	r.Use(mw.LoggingAndRecovery(true))
+	cntxt := &daemon.Context{
+		PidFileName: "pid",
+		PidFilePerm: 0644,
+		LogFileName: "log",
+		LogFilePerm: 0640,
+		WorkDir:     "./",
+		Umask:       027,
+		Args:        nil,
+	}
 
-	r.Get("/", Dashboard)
+	if len(daemon.ActiveFlags()) > 0 {
+		d, err := cntxt.Search()
+		if err != nil {
+			log.Fatalln("Unable send signal to the daemon:", err)
+		}
+		daemon.SendCommands(d)
+		return
+	}
 
-	r.Post("/api/items/sync", SyncItems)
-	r.Post("/api/items/backup", BackupItems)
-	// r.DELETE("/api/items", DeleteItems)
+	d, err := cntxt.Reborn()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	if d != nil {
+		return
+	}
+	defer cntxt.Release()
 
-	r.Post("/api/auth", Registration)
-	r.Patch("/api/auth", ChangePassword)
-	r.Post("/api/auth/change_pw", ChangePassword)
-	r.Post("/api/auth/sign_in", Login)
-	r.Post("/api/auth/sign_in.json", Login)
-	r.Get("/api/auth/params", GetParams)
+	go worker()
+	if err := daemon.ServeSignals(); err != nil {
+		log.Println("Error:", err)
+	}
+}
 
-	log.Println("Running on port 8888")
-	http.ListenAndServe(":8888", r.Serve())
+func termHandler(sig os.Signal) error {
+	close(run)
+	return daemon.ErrStop
+}
+
+func reloadHandler(sig os.Signal) error {
+	log.Println("configuration reloaded")
+	return nil
 }
