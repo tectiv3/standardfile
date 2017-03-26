@@ -3,12 +3,18 @@ package main
 import (
 	"github.com/go-playground/pure"
 	mw "github.com/go-playground/pure/examples/middleware/logging-recovery"
+	"github.com/tectiv3/standardfile/db"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 )
 
-func worker() {
+func worker(port int, dbpath string) {
+	if port == 0 {
+		port = 8888
+	}
+	db.Init(dbpath)
 	log.Println("Started StandardFile Server")
 	r := pure.New()
 	r.Use(mw.LoggingAndRecovery(true))
@@ -24,15 +30,15 @@ func worker() {
 	r.Post("/api/auth/sign_in.json", Login)
 	r.Get("/api/auth/params", GetParams)
 
-	log.Println("Running on port 8888")
-	go listen(r)
+	log.Println("Running on port " + strconv.Itoa(port))
+	go listen(r, port)
 	<-run
 	log.Println("Server stopped")
 	os.Exit(0)
 }
 
-func listen(r *pure.Mux) {
-	err := http.ListenAndServe(":8888", r.Serve())
+func listen(r *pure.Mux, port int) {
+	err := http.ListenAndServe(":"+strconv.Itoa(port), r.Serve())
 	if err != nil {
 		log.Println(err)
 	}

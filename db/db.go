@@ -2,7 +2,6 @@ package db
 
 import (
 	"database/sql"
-	"io/ioutil"
 	"log"
 	"reflect"
 
@@ -10,6 +9,27 @@ import (
 	//importing init from sqlite3
 	_ "github.com/mattn/go-sqlite3"
 )
+
+const SCHEMA string = `
+PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE IF NOT EXISTS "items" (
+    "uuid" varchar(36) primary key NULL,
+    "user_uuid" varchar(36) NOT NULL,
+    "content" blob NOT NULL,
+    "content_type" varchar(255) NOT NULL,
+    "enc_item_key" varchar(255) NOT NULL,
+    "auth_hash" varchar(255) NOT NULL,
+    "deleted" integer(1) NOT NULL DEFAULT 0,
+    "created_at" timestamp NOT NULL,
+    "updated_at" timestamp NOT NULL);
+CREATE TABLE IF NOT EXISTS "users" ("uuid" varchar(36) primary key NULL, "email" varchar(255) NOT NULL, "password" varchar(255) NOT NULL, "pw_func" varchar(255) NOT NULL DEFAULT "pbkdf2", "pw_alg" varchar(255) NOT NULL DEFAULT "sha512", "pw_cost" integer NOT NULL DEFAULT 5000, "pw_key_size" integer NOT NULL DEFAULT 512, "pw_nonce" varchar(255) NOT NULL, "created_at" timestamp NOT NULL, "updated_at" timestamp NOT NULL);
+CREATE INDEX IF NOT EXISTS user_uuid ON items (user_uuid);
+CREATE INDEX IF NOT EXISTS user_content on items (user_uuid, content_type);
+CREATE INDEX IF NOT EXISTS updated_at on items (updated_at);
+CREATE INDEX IF NOT EXISTS email on users (email);
+COMMIT;
+`
 
 //Database encapsulates database
 type Database struct {
@@ -37,11 +57,7 @@ func (db Database) prepare(q string) (stmt *sql.Stmt) {
 
 func (db Database) createTables() {
 	// create table if not exists
-	table, err := ioutil.ReadFile("./db/schema.sql")
-	if err != nil {
-		panic(err)
-	}
-	_, err = db.db.Exec(string(table))
+	_, err = db.db.Exec(SCHEMA)
 	if err != nil {
 		panic(err)
 	}
@@ -50,8 +66,8 @@ func (db Database) createTables() {
 var database Database
 var err error
 
-func init() {
-	database.db, err = sql.Open("sqlite3", "db/sf.db?loc=auto&parseTime=true")
+func Init(dbpath string) {
+	database.db, err = sql.Open("sqlite3", dbpath+"?loc=auto&parseTime=true")
 	// database.db, err = sql.Open("mysql", "Username:Password@tcp(Host:Port)/standardfile?parseTime=true")
 
 	if err != nil {

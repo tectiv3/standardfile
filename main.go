@@ -11,9 +11,10 @@ import (
 const DEBUG = true
 
 var (
-	signal = flag.String("s", "", `stop — shutdown
-reload — reloading the configuration file`)
-	run = make(chan bool)
+	signal = flag.String("s", "", `stop — shutdown server`)
+	port   = flag.Int("p", 8888, `port to listen on`)
+	dbpath = flag.String("db", "sf.db", `db file location`)
+	run    = make(chan bool)
 )
 
 func main() {
@@ -49,7 +50,7 @@ func main() {
 	}
 	defer cntxt.Release()
 
-	go worker()
+	go worker(*port, *dbpath)
 	if err := daemon.ServeSignals(); err != nil {
 		log.Println("Error:", err)
 	}
