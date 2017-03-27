@@ -14,7 +14,7 @@ import (
 type data map[string]interface{}
 
 func Log(v ...interface{}) {
-	if DEBUG {
+	if *debug {
 		log.Println(v...)
 	}
 }

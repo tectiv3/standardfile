@@ -8,19 +8,17 @@ import (
 	"syscall"
 )
 
-const DEBUG = true
-
 var (
 	signal = flag.String("s", "", `stop — shutdown server`)
 	port   = flag.Int("p", 8888, `port to listen on`)
 	dbpath = flag.String("db", "sf.db", `db file location`)
+	debug  = flag.Bool("debug", false, `enable debug output`)
 	run    = make(chan bool)
 )
 
 func main() {
 	flag.Parse()
 	daemon.AddCommand(daemon.StringFlag(signal, "stop"), syscall.SIGTERM, termHandler)
-	daemon.AddCommand(daemon.StringFlag(signal, "reload"), syscall.SIGHUP, reloadHandler)
 
 	cntxt := &daemon.Context{
 		PidFileName: "pid",
@@ -59,9 +57,4 @@ func main() {
 func termHandler(sig os.Signal) error {
 	close(run)
 	return daemon.ErrStop
-}
-
-func reloadHandler(sig os.Signal) error {
-	log.Println("configuration reloaded")
-	return nil
 }
