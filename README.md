@@ -8,6 +8,8 @@ You can run your own Standard File server, and use it with any SF compatible cli
 This allows you to have 100% control of your data.
 This server implementation is built with Go and can be deployed in seconds.
 
+##### You may require to add `/api` to the url of your server if you plan to use this server with https://standardnotes.org/
+
 #### Getting started
 
 **Requirements**
@@ -66,14 +68,23 @@ server {
     include snippets/ssl-params.conf;
 	
     location / {
+	add_header Access-Control-Allow-Origin '*' always;
+	add_header Access-Control-Allow-Credentials true always;
+	add_header Access-Control-Allow-Headers 'authorization,content-type' always;
+	add_header Access-Control-Allow-Methods 'GET, POST, PUT, PATCH, DELETE, OPTIONS' always;
+	add_header Access-Control-Expose-Headers 'Access-Token, Client, UID' always;
 
-         proxy_set_header        Host $host;
-         proxy_set_header        X-Real-IP $remote_addr;
-         proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
-         proxy_set_header        X-Forwarded-Proto $scheme;
+	if ($request_method = OPTIONS ) {
+		return 200;
+	}
 
-         proxy_pass          http://localhost:8888;
-         proxy_read_timeout  90;
+	proxy_set_header        Host $host;
+	proxy_set_header        X-Real-IP $remote_addr;
+	proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+	proxy_set_header        X-Forwarded-Proto $scheme;
+
+	proxy_pass          http://localhost:8888;
+	proxy_read_timeout  90;
     }
 }
 ```
