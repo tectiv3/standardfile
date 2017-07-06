@@ -1,0 +1,11 @@
+package: github.com/tectiv3/standardfile
+import:
+- package: github.com/deckarep/golang-set
+- package: github.com/dgrijalva/jwt-go
+- package: github.com/go-playground/pure
+  subpackages:
+  - _examples/middleware/logging-recovery
+- package: github.com/kisielk/sqlstruct
+- package: github.com/mattn/go-sqlite3
+- package: github.com/satori/go.uuid
+- package: github.com/sevlyar/go-daemon

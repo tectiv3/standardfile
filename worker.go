@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/go-playground/pure"
-	mw "github.com/go-playground/pure/examples/middleware/logging-recovery"
+	mw "github.com/go-playground/pure/_examples/middleware/logging-recovery"
 	"github.com/tectiv3/standardfile/db"
 	"log"
 	"net/http"

@@ -1,0 +1,30 @@
+hash: bf9bd5cd5da5b6a0a19440357ffedad747239bd6b62bbfbab6d24dd281dc2bd7
+updated: 2017-07-06T20:32:56.931409022+03:00
+imports:
+- name: github.com/deckarep/golang-set
+  version: a4b9a94ae3157ef89441395f98c6ab4018fcb26a
+- name: github.com/dgrijalva/jwt-go
+  version: a539ee1a749a2b895533f979515ac7e6e0f5b650
+- name: github.com/go-playground/ansi
+  version: fd5b8faa557e2cef2a634378fd623e74097adb5c
+- name: github.com/go-playground/form
+  version: 20d04065dbc6f79aac03bbfd49b6a9e0658f5842
+- name: github.com/go-playground/pure
+  version: 1eb11d9b1d07356311d782c51797ce0ae202b9ff
+  subpackages:
+  - _examples/middleware/logging-recovery
+- name: github.com/kardianos/osext
+  version: ae77be60afb1dcacde03767a8c37337fad28ac14
+- name: github.com/kisielk/sqlstruct
+  version: 648daed35d49dac24a4bff253b190a80da3ab6a5
+- name: github.com/mattn/go-sqlite3
+  version: acfa60124032040b9f5a9406f5a772ee16fe845e
+- name: github.com/satori/go.uuid
+  version: 5bf94b69c6b68ee1b541973bb8e1144db23a194b
+- name: github.com/sevlyar/go-daemon
+  version: 821596c79672d38b7923916e766363184c00079c
+- name: golang.org/x/net
+  version: 054b33e6527139ad5b1ec2f6232c3b175bd9a30c
+  subpackages:
+  - context
+testImports: []
