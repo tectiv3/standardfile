@@ -244,7 +244,7 @@ func (u User) GetParams(email string) interface{} {
 		salt = email + "SN" + "a04a8fe6bcb19ba61c5c0873d391e987982fbbd4"
 	}
 	params["pw_salt"] = strings.Replace(fmt.Sprintf("% x", sha1.Sum([]byte(salt))), " ", "", -1)
-
+	params["version"] = "001"
 	return params
 }
 
