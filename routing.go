@@ -13,6 +13,7 @@ import (
 
 type data map[string]interface{}
 
+//Log writes in log if debug flag is set
 func Log(v ...interface{}) {
 	if *debug {
 		log.Println(v...)
@@ -46,7 +47,7 @@ func authenticateUser(r *http.Request) (User, error) {
 	if claims, ok := token.Claims.(*UserClaims); ok && token.Valid {
 		Log("Token is valid, claims: ", claims)
 
-		if ok := user.LoadByUUID(claims.Uuid); !ok {
+		if ok := user.LoadByUUID(claims.UUID); !ok {
 			return user, fmt.Errorf("Unknown user")
 		}
 
@@ -61,7 +62,7 @@ func authenticateUser(r *http.Request) (User, error) {
 //Dashboard - is the root handler
 func Dashboard(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Dashboard"))
+	w.Write([]byte("Dashboard. Server version: " + VERSION))
 }
 
 //ChangePassword - is the change password handler

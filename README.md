@@ -35,11 +35,11 @@ standardfile
 3. Stop the server:
 
 ```
-standardfile -s stop
+standardfile -stop
 ```
 ### Configuration options
 
-# Customize port and database location
+#### Customize port and database location
 ```
 -p 8080
 ```
@@ -48,6 +48,11 @@ and
 -db /var/lib/sf.db
 ```
 default port is `8888` and database file named `sf.db` will be created in working directory
+
+#### Migrations
+To perform migrations run `standardfile --migrate`
+
+_Perform migration upon updating to v0.2.0_
 
 ### Deploying to a live server
 I suggest putting it behind nginx with https enabled location

@@ -11,7 +11,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const SCHEMA string = `
+const schema string = `
 PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
 CREATE TABLE IF NOT EXISTS "items" (
@@ -49,6 +49,7 @@ type Database struct {
 	db *sql.DB
 }
 
+//DB returns DB handler
 func DB() *sql.DB {
 	return database.db
 }
@@ -74,7 +75,7 @@ func (db Database) prepare(q string) (stmt *sql.Stmt) {
 
 func (db Database) createTables() {
 	// create table if not exists
-	_, err = db.db.Exec(SCHEMA)
+	_, err = db.db.Exec(schema)
 	if err != nil {
 		panic(err)
 	}
@@ -83,6 +84,7 @@ func (db Database) createTables() {
 var database Database
 var err error
 
+//Init opens DB connection
 func Init(dbpath string) {
 	database.db, err = sql.Open("sqlite3", dbpath+"?loc=auto&parseTime=true")
 	// database.db, err = sql.Open("mysql", "Username:Password@tcp(Host:Port)/standardfile?parseTime=true")

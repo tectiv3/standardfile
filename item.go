@@ -17,15 +17,15 @@ import (
 
 // Item - is an item type
 type Item struct {
-	Uuid         string    `json:"uuid"`
+	UUID         string    `json:"uuid"`
 	User_uuid    string    `json:"user_uuid"`
 	Content      string    `json:"content"`
 	Content_type string    `json:"content_type"`
 	Enc_item_key string    `json:"enc_item_key"`
 	Auth_hash    string    `json:"auth_hash"`
 	Deleted      bool      `json:"deleted"`
-	Created_at   time.Time `json:"created_at"`
-	Updated_at   time.Time `json:"updated_at"`
+	CreatedAt    time.Time `json:"created_at" sql:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at" sql:"updated_at"`
 }
 
 type it interface {
@@ -76,78 +76,78 @@ func (r *SyncRequest) LoadValue(name string, value []string) {
 }
 
 //LoadValue - hydrate struct from map
-func (this *Item) LoadValue(name string, value []string) {
+func (i *Item) LoadValue(name string, value []string) {
 	switch name {
 	case "uuid":
-		this.Uuid = value[0]
+		i.UUID = value[0]
 	case "user_uuid":
-		this.User_uuid = value[0]
+		i.User_uuid = value[0]
 	case "content":
-		this.Content = value[0]
+		i.Content = value[0]
 	case "enc_item_key":
-		this.Enc_item_key = value[0]
+		i.Enc_item_key = value[0]
 	case "content_type":
-		this.Content_type = value[0]
+		i.Content_type = value[0]
 	case "auth_hash":
-		this.Content_type = value[0]
+		i.Content_type = value[0]
 	case "deleted":
-		this.Deleted = (value[0] == "true")
+		i.Deleted = (value[0] == "true")
 	}
 }
 
 //Save - save current item into DB
-func (this *Item) save() error {
-	if this.Uuid == "" || !this.Exists() {
-		return this.create()
+func (i *Item) save() error {
+	if i.UUID == "" || !i.Exists() {
+		return i.create()
 	}
-	return this.update()
+	return i.update()
 }
 
-func (this *Item) create() error {
-	if this.Uuid == "" {
-		this.Uuid = uuid.NewV4().String()
+func (i *Item) create() error {
+	if i.UUID == "" {
+		i.UUID = uuid.NewV4().String()
 	}
-	this.Created_at = time.Now()
-	this.Updated_at = time.Now()
-	Log("Create:", this.Uuid)
-	return db.Query("INSERT INTO `items` (`uuid`, `user_uuid`, content,  content_type, enc_item_key, auth_hash, deleted, created_at, updated_at) VALUES(?,?,?,?,?,?,?,?,?)", this.Uuid, this.User_uuid, this.Content, this.Content_type, this.Enc_item_key, this.Auth_hash, this.Deleted, this.Created_at, this.Updated_at)
+	i.CreatedAt = time.Now()
+	i.UpdatedAt = time.Now()
+	Log("Create:", i.UUID)
+	return db.Query("INSERT INTO `items` (`uuid`, `user_uuid`, content,  content_type, enc_item_key, auth_hash, deleted, created_at, updated_at) VALUES(?,?,?,?,?,?,?,?,?)", i.UUID, i.User_uuid, i.Content, i.Content_type, i.Enc_item_key, i.Auth_hash, i.Deleted, i.CreatedAt, i.UpdatedAt)
 }
 
-func (this *Item) update() error {
-	this.Updated_at = time.Now()
-	Log("Update:", this.Uuid)
-	return db.Query("UPDATE `items` SET `content`=?, `enc_item_key`=?, `auth_hash`=?, `deleted`=?, `updated_at`=? WHERE `uuid`=? AND `user_uuid`=?", this.Content, this.Enc_item_key, this.Auth_hash, this.Deleted, this.Updated_at, this.Uuid, this.User_uuid)
+func (i *Item) update() error {
+	i.UpdatedAt = time.Now()
+	Log("Update:", i.UUID)
+	return db.Query("UPDATE `items` SET `content`=?, `enc_item_key`=?, `auth_hash`=?, `deleted`=?, `updated_at`=? WHERE `uuid`=? AND `user_uuid`=?", i.Content, i.Enc_item_key, i.Auth_hash, i.Deleted, i.UpdatedAt, i.UUID, i.User_uuid)
 }
 
-func (this *Item) delete() error {
-	if this.Uuid == "" {
+func (i *Item) delete() error {
+	if i.UUID == "" {
 		return fmt.Errorf("Trying to delete unexisting item")
 	}
-	this.Content = ""
-	this.Enc_item_key = ""
-	this.Auth_hash = ""
-	this.Updated_at = time.Now()
+	i.Content = ""
+	i.Enc_item_key = ""
+	i.Auth_hash = ""
+	i.UpdatedAt = time.Now()
 
-	return db.Query("UPDATE `items` SET `content`='', `enc_item_key`='', `auth_hash`='',`deleted`=1, `updated_at`=? WHERE `uuid`=? AND `user_uuid`=?", this.Updated_at, this.Uuid, this.User_uuid)
+	return db.Query("UPDATE `items` SET `content`='', `enc_item_key`='', `auth_hash`='',`deleted`=1, `updated_at`=? WHERE `uuid`=? AND `user_uuid`=?", i.UpdatedAt, i.UUID, i.User_uuid)
 }
 
-func (this Item) copy() (Item, error) {
-	this.Uuid = uuid.NewV4().String()
-	this.Updated_at = time.Now()
-	err := this.create()
+func (i Item) copy() (Item, error) {
+	i.UUID = uuid.NewV4().String()
+	i.UpdatedAt = time.Now()
+	err := i.create()
 	if err != nil {
 		Log(err)
 		return Item{}, err
 	}
-	return this, nil
+	return i, nil
 }
 
 //Exists - checks if current user exists in DB
-func (this Item) Exists() bool {
-	if this.Uuid == "" {
+func (i Item) Exists() bool {
+	if i.UUID == "" {
 		return false
 	}
-	uuid, err := db.SelectFirst("SELECT `uuid` FROM `items` WHERE `uuid`=?", this.Uuid)
+	uuid, err := db.SelectFirst("SELECT `uuid` FROM `items` WHERE `uuid`=?", i.UUID)
 
 	if err != nil {
 		Log(err)
@@ -158,8 +158,8 @@ func (this Item) Exists() bool {
 }
 
 //LoadByUUID - loads item info from DB
-func (this *Item) LoadByUUID(uuid string) bool {
-	_, err := db.SelectStruct("SELECT * FROM `items` WHERE `uuid`=?", this, uuid)
+func (i *Item) LoadByUUID(uuid string) bool {
+	_, err := db.SelectStruct("SELECT * FROM `items` WHERE `uuid`=?", i, uuid)
 
 	if err != nil {
 		Log(err)
@@ -174,7 +174,7 @@ func GetTokenFromTime(date time.Time) string {
 	return base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("1:%d", date.UnixNano())))
 }
 
-//GetTimeFromToken - retreive datetime from sync token
+//GetTimeFromToken - retrieve datetime from sync token
 func GetTimeFromToken(token string) time.Time {
 	decoded, err := base64.URLEncoding.DecodeString(token)
 	if err != nil {
@@ -191,7 +191,7 @@ func GetTimeFromToken(token string) time.Time {
 }
 
 //SyncItems - sync manager
-func (user User) SyncItems(request SyncRequest) (SyncResponse, error) {
+func (u User) SyncItems(request SyncRequest) (SyncResponse, error) {
 
 	response := SyncResponse{
 		Retrieved:   Items{},
@@ -207,8 +207,8 @@ func (user User) SyncItems(request SyncRequest) (SyncResponse, error) {
 	var err error
 	var cursorTime time.Time
 	Log("Get items")
-	response.Retrieved, cursorTime, err = user.getItems(request)
-	// Log("Retreived items:", response.Retrieved)
+	response.Retrieved, cursorTime, err = u.getItems(request)
+	// Log("Retrieved items:", response.Retrieved)
 	if err != nil {
 		return response, err
 	}
@@ -216,12 +216,12 @@ func (user User) SyncItems(request SyncRequest) (SyncResponse, error) {
 		response.CursorToken = GetTokenFromTime(cursorTime)
 	}
 	Log("Save incoming items", request)
-	response.Saved, response.Unsaved, err = request.Items.save(user.Uuid)
+	response.Saved, response.Unsaved, err = request.Items.save(u.UUID)
 	if err != nil {
 		return response, err
 	}
 	if len(response.Saved) > 0 {
-		response.SyncToken = GetTokenFromTime(response.Saved[0].Updated_at)
+		response.SyncToken = GetTokenFromTime(response.Saved[0].UpdatedAt)
 		// Check for conflicts
 		Log("Conflicts check")
 		response.Saved.checkForConflicts(&response.Retrieved)
@@ -231,27 +231,27 @@ func (user User) SyncItems(request SyncRequest) (SyncResponse, error) {
 
 func (items Items) checkForConflicts(existing *Items) {
 	Log("Saved len:", len(items))
-	Log("Retreived len:", len(*existing))
+	Log("Retrieved len:", len(*existing))
 	saved := mapset.NewSet()
 	for _, item := range items {
-		saved.Add(item.Uuid)
+		saved.Add(item.UUID)
 	}
-	retreived := mapset.NewSet()
+	retrieved := mapset.NewSet()
 	for _, item := range *existing {
-		retreived.Add(item.Uuid)
+		retrieved.Add(item.UUID)
 	}
-	conflicts := saved.Intersect(retreived)
+	conflicts := saved.Intersect(retrieved)
 	Log("Conflicts", conflicts)
 	// saved items take precedence, retrieved items are duplicated with a new uuid
 	for _, uuid := range conflicts.ToSlice() {
 		// if changes are greater than minConflictInterval seconds apart, create conflicted copy, otherwise discard conflicted
 		Log(uuid)
 		savedCopy := items.find(uuid.(string))
-		retreivedCopy := existing.find(uuid.(string))
+		retrievedCopy := existing.find(uuid.(string))
 
-		if savedCopy.isConflictedWith(retreivedCopy) {
+		if savedCopy.isConflictedWith(retrievedCopy) {
 			log.Printf("Creating conflicted copy of %v\n", uuid)
-			dupe, err := retreivedCopy.copy()
+			dupe, err := retrievedCopy.copy()
 			if err != nil {
 				Log(err)
 			} else {
@@ -262,8 +262,8 @@ func (items Items) checkForConflicts(existing *Items) {
 	}
 }
 
-func (this Item) isConflictedWith(copy Item) bool {
-	diff := math.Abs(float64(this.Updated_at.Unix() - copy.Updated_at.Unix()))
+func (i Item) isConflictedWith(copy Item) bool {
+	diff := math.Abs(float64(i.UpdatedAt.Unix() - copy.UpdatedAt.Unix()))
 	Log("Conflict diff, min interval:", diff, minConflictInterval)
 	return diff > minConflictInterval
 }
@@ -296,22 +296,22 @@ func (items Items) save(userUUID string) (Items, []unsaved, error) {
 	return savedItems, unsavedItems, nil
 }
 
-func (this *Item) load() bool {
-	return this.LoadByUUID(this.Uuid)
+func (i *Item) load() bool {
+	return i.LoadByUUID(i.UUID)
 }
 
-func (user User) getItems(request SyncRequest) (items Items, cursorTime time.Time, err error) {
+func (u User) getItems(request SyncRequest) (items Items, cursorTime time.Time, err error) {
 	if request.CursorToken != "" {
 		Log("loadItemsFromDate")
-		items, err = user.loadItemsFromDate(GetTimeFromToken(request.CursorToken))
+		items, err = u.loadItemsFromDate(GetTimeFromToken(request.CursorToken))
 	} else if request.SyncToken != "" {
 		Log("loadItemsOlder")
-		items, err = user.loadItemsOlder(GetTimeFromToken(request.SyncToken))
+		items, err = u.loadItemsOlder(GetTimeFromToken(request.SyncToken))
 	} else {
 		Log("loadItems")
-		items, err = user.loadItems(request.Limit)
+		items, err = u.loadItems(request.Limit)
 		if len(items) > 0 {
-			cursorTime = items[len(items)-1].Updated_at
+			cursorTime = items[len(items)-1].UpdatedAt
 		}
 	}
 	return items, cursorTime, err
@@ -319,25 +319,25 @@ func (user User) getItems(request SyncRequest) (items Items, cursorTime time.Tim
 
 func (u User) loadItemsFromDate(date time.Time) ([]Item, error) {
 	items := []Item{}
-	err := db.Select("SELECT * FROM `items` WHERE `user_uuid`=? AND `updated_at` >= ? ORDER BY `updated_at` DESC", &items, u.Uuid, date)
+	err := db.Select("SELECT * FROM `items` WHERE `user_uuid`=? AND `updated_at` >= ? ORDER BY `updated_at` DESC", &items, u.UUID, date)
 	return items, err
 }
 
 func (u User) loadItemsOlder(date time.Time) ([]Item, error) {
 	items := []Item{}
-	err := db.Select("SELECT * FROM `items` WHERE `user_uuid`=? AND `updated_at` > ? ORDER BY `updated_at` DESC", &items, u.Uuid, date)
+	err := db.Select("SELECT * FROM `items` WHERE `user_uuid`=? AND `updated_at` > ? ORDER BY `updated_at` DESC", &items, u.UUID, date)
 	return items, err
 }
 
 func (u User) loadItems(limit int) ([]Item, error) {
 	items := []Item{}
-	err := db.Select("SELECT * FROM `items` WHERE `user_uuid`=? ORDER BY `updated_at` DESC", &items, u.Uuid)
+	err := db.Select("SELECT * FROM `items` WHERE `user_uuid`=? ORDER BY `updated_at` DESC", &items, u.UUID)
 	return items, err
 }
 
 func (items Items) find(uuid string) Item {
 	for _, item := range items {
-		if item.Uuid == uuid {
+		if item.UUID == uuid {
 			return item
 		}
 	}
@@ -347,7 +347,7 @@ func (items Items) find(uuid string) Item {
 func (items *Items) delete(uuid string) {
 	position := 0
 	for i, item := range *items {
-		if item.Uuid == uuid {
+		if item.UUID == uuid {
 			position = i
 			break
 		}

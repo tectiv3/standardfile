@@ -17,6 +17,9 @@ var (
 	run     = make(chan bool)
 )
 
+//VERSION is server version
+const VERSION = "v0.2.0"
+
 func main() {
 	flag.Parse()
 
@@ -57,6 +60,7 @@ func main() {
 	defer cntxt.Release()
 
 	go worker(*port, *dbpath)
+
 	if err := daemon.ServeSignals(); err != nil {
 		log.Println("Error:", err)
 	}

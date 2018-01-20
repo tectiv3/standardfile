@@ -15,7 +15,7 @@ func worker(port int, dbpath string) {
 		port = 8888
 	}
 	db.Init(dbpath)
-	log.Println("Started StandardFile Server")
+	log.Println("Started StandardFile Server", VERSION)
 	r := pure.New()
 	r.Use(mw.LoggingAndRecovery(true))
 

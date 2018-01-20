@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+//Migrate performs migration
 func Migrate(dbpath string) {
 	db.Init(dbpath)
 	migrations := getMigrations()
@@ -41,7 +42,7 @@ func getMigrations() []m.Migration {
 					if u.Email == "" || u.Pw_nonce == "" {
 						continue
 					}
-					if _, err := tx.Exec("UPDATE `users` SET `pw_salt`=?, `updated_at`=? WHERE `uuid`=?", getSalt(u.Email, u.Pw_nonce), time.Now(), u.Uuid); err != nil {
+					if _, err := tx.Exec("UPDATE `users` SET `pw_salt`=?, `updated_at`=? WHERE `uuid`=?", getSalt(u.Email, u.Pw_nonce), time.Now(), u.UUID); err != nil {
 						log.Println(err)
 					}
 				}
