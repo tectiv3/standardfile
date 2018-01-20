@@ -110,7 +110,7 @@ func (u *User) create() error {
 	u.Password = Hash(u.Password)
 	u.Created_at = time.Now()
 
-	err := db.Query("INSERT INTO users (uuid, email, password, pw_func, pw_alg, pw_cost, pw_key_size, pw_nonce, pw_auth, pw_salt, created_at, updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)", u.Uuid, u.Email, u.Password, u.Pw_func, u.Pw_alg, u.Pw_cost, u.Pw_key_size, u.Pw_nonce, u.Pw_auth, u.Pw_salt, u.Created_at, u.Updated_at)
+	err := db.Query("INSERT INTO users (uuid, email, password, pw_func, pw_alg, pw_cost, pw_key_size, pw_nonce, pw_auth, pw_salt, created_at, updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)", u.Uuid, u.Email, u.Password, u.Pw_func, u.Pw_alg, u.Pw_cost, u.Pw_key_size, u.Pw_nonce, u.Pw_auth, u.Pw_salt, u.Created_at, u.Updated_at)
 
 	if err != nil {
 		Log(err)
@@ -192,7 +192,7 @@ func (u *User) Login(email, password string) (string, error) {
 func (u *User) LoadByUUID(uuid string) bool {
 	_, err := db.SelectStruct("SELECT * FROM `users` WHERE `uuid`=?", u, uuid)
 	if err != nil {
-		Log(err)
+		Log("Load err:", err)
 		return false
 	}
 
@@ -233,10 +233,14 @@ func (u *User) loadByEmailAndPassword(email, password string) {
 }
 
 //GetParams returns auth parameters by email
-func (u User) GetParams(email string) interface{} {
+func (u User) GetParams(email string) map[string]interface{} {
 	u.loadByEmail(email)
-
 	params := map[string]interface{}{}
+
+	if u.Email == "" {
+		return params
+	}
+
 	params["version"] = "001"
 	params["pw_cost"] = u.Pw_cost
 	if u.Pw_func != "" {

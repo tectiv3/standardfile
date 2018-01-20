@@ -22,8 +22,8 @@ CREATE TABLE IF NOT EXISTS "items" (
     "enc_item_key" varchar(255) NOT NULL,
     "auth_hash" varchar(255) NOT NULL,
     "deleted" integer(1) NOT NULL DEFAULT 0,
-    "created_at" timestamp NOT NULL,
-    "updated_at" timestamp NOT NULL);
+    "created_at" timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE IF NOT EXISTS "users" (
     "uuid" varchar(36) primary key NULL,
     "email" varchar(255) NOT NULL,
@@ -35,8 +35,8 @@ CREATE TABLE IF NOT EXISTS "users" (
     "pw_nonce" varchar(255) NOT NULL,
     "pw_auth" varchar(255) NOT NULL,
     "pw_salt" varchar(255) NOT NULL,
-    "created_at" timestamp NOT NULL,
-    "updated_at" timestamp NOT NULL);
+    "created_at" timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP);
 CREATE INDEX IF NOT EXISTS user_uuid ON items (user_uuid);
 CREATE INDEX IF NOT EXISTS user_content on items (user_uuid, content_type);
 CREATE INDEX IF NOT EXISTS updated_at on items (updated_at);
@@ -134,11 +134,16 @@ func SelectStruct(sql string, obj interface{}, args ...interface{}) (interface{}
 
 	stmt := database.prepare(sql)
 	defer stmt.Close()
-	err := stmt.QueryRow(args...).Scan(values...)
+
+	rows, err := stmt.Query(args...)
+	defer rows.Close()
 	if err != nil {
 		return nil, err
 	}
-	return obj, nil
+	for rows.Next() {
+		err = sqlstruct.Scan(destv.Interface(), rows)
+	}
+	return obj, err
 }
 
 //Select - selects multiple results from the DB

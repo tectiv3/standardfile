@@ -134,6 +134,10 @@ func GetParams(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	params := user.GetParams(email)
+	if _, ok := params["version"]; !ok {
+		showError(w, fmt.Errorf("Invalid email or password"), http.StatusNotFound)
+		return
+	}
 	content, _ := json.MarshalIndent(params, "", "  ")
 	Log("Response:", string(content))
 	pure.JSON(w, http.StatusOK, params)
