@@ -82,4 +82,4 @@ func main() {
 
 Licenses
 --------
-- [MIT License](https://raw.githubusercontent.com/go-playground/ansi/master/LICENSE) (MIT), Copyright (c) 2016 Dean Karn
+- [MIT License](https://raw.githubusercontent.com/go-playground/ansi/master/LICENSE) (MIT), Copyright (c) 2017 Dean Karn

@@ -448,6 +448,8 @@ func TestDecoderBool(t *testing.T) {
 	type TestBool struct {
 		Bool              bool
 		BoolPtr           *bool
+		BoolPtrNil        *bool
+		BoolPtrEmpty      *bool
 		BoolArray         []bool
 		BoolPtrArray      []*bool
 		BoolArrayArray    [][]bool
@@ -460,6 +462,7 @@ func TestDecoderBool(t *testing.T) {
 	values := url.Values{
 		"Bool":                    []string{"true"},
 		"BoolPtr":                 []string{"true"},
+		"BoolPtrEmpty":            []string{""},
 		"BoolArray":               []string{"off", "t", "on"},
 		"BoolPtrArray[0]":         []string{"true"},
 		"BoolPtrArray[2]":         []string{"T"},
@@ -484,6 +487,9 @@ func TestDecoderBool(t *testing.T) {
 	Equal(t, test.Bool, true)
 
 	Equal(t, *test.BoolPtr, true)
+	Equal(t, test.BoolPtrNil, nil)
+	NotEqual(t, test.BoolPtrEmpty, nil)
+	Equal(t, *test.BoolPtrEmpty, false)
 
 	Equal(t, len(test.BoolArray), 7)
 	Equal(t, test.BoolArray[0], false)
@@ -1505,4 +1511,39 @@ func TestDecoderRegisterTagNameFunc(t *testing.T) {
 	Equal(t, err, nil)
 	Equal(t, test.Value, "joeybloggs")
 	Equal(t, test.Ignore, "")
+}
+
+func TestDecoderEmbedModes(t *testing.T) {
+
+	type A struct {
+		Field string
+	}
+
+	type B struct {
+		A
+		Field string
+	}
+
+	var b B
+
+	decoder := NewDecoder()
+
+	values := url.Values{
+		"Field": []string{"Value"},
+	}
+
+	err := decoder.Decode(&b, values)
+	Equal(t, err, nil)
+	Equal(t, b.Field, "Value")
+	Equal(t, b.A.Field, "Value")
+
+	values = url.Values{
+		"Field":   []string{"B Val"},
+		"A.Field": []string{"A Val"},
+	}
+
+	err = decoder.Decode(&b, values)
+	Equal(t, err, nil)
+	Equal(t, b.Field, "B Val")
+	Equal(t, b.A.Field, "A Val")
 }

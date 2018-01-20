@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/deckarep/golang-set"
-	"github.com/kisielk/sqlstruct"
+	// "github.com/kisielk/sqlstruct"
 	"github.com/satori/go.uuid"
 	"github.com/tectiv3/standardfile/db"
 )
@@ -300,25 +300,16 @@ func (this *Item) load() bool {
 	return this.LoadByUUID(this.Uuid)
 }
 
-func _loadItems(result []interface{}, err error) (Items, error) {
-	items := Items{}
-	for _, item := range result {
-		items = append(items, *item.(*Item))
-	}
-	Log("Loading...", len(items))
-	return items, err
-}
-
 func (user User) getItems(request SyncRequest) (items Items, cursorTime time.Time, err error) {
 	if request.CursorToken != "" {
 		Log("loadItemsFromDate")
-		items, err = _loadItems(user.loadItemsFromDate(GetTimeFromToken(request.CursorToken)))
+		items, err = user.loadItemsFromDate(GetTimeFromToken(request.CursorToken))
 	} else if request.SyncToken != "" {
 		Log("loadItemsOlder")
-		items, err = _loadItems(user.loadItemsOlder(GetTimeFromToken(request.SyncToken)))
+		items, err = user.loadItemsOlder(GetTimeFromToken(request.SyncToken))
 	} else {
 		Log("loadItems")
-		items, err = _loadItems(user.loadItems(request.Limit))
+		items, err = user.loadItems(request.Limit)
 		if len(items) > 0 {
 			cursorTime = items[len(items)-1].Updated_at
 		}
@@ -326,19 +317,22 @@ func (user User) getItems(request SyncRequest) (items Items, cursorTime time.Tim
 	return items, cursorTime, err
 }
 
-func (u User) loadItemsFromDate(date time.Time) ([]interface{}, error) {
-	var item = new(Item)
-	return db.Select(fmt.Sprintf("SELECT %s FROM `items` WHERE `user_uuid`=? AND `updated_at` >= ? ORDER BY `updated_at` DESC", sqlstruct.Columns(*item)), item, u.Uuid, date)
+func (u User) loadItemsFromDate(date time.Time) ([]Item, error) {
+	items := []Item{}
+	err := db.Select("SELECT %s FROM `items` WHERE `user_uuid`=? AND `updated_at` >= ? ORDER BY `updated_at` DESC", &items, u.Uuid, date)
+	return items, err
 }
 
-func (u User) loadItemsOlder(date time.Time) ([]interface{}, error) {
-	var item = new(Item)
-	return db.Select(fmt.Sprintf("SELECT %s FROM `items` WHERE `user_uuid`=? AND `updated_at` > ? ORDER BY `updated_at` DESC", sqlstruct.Columns(*item)), item, u.Uuid, date)
+func (u User) loadItemsOlder(date time.Time) ([]Item, error) {
+	items := []Item{}
+	err := db.Select("SELECT * FROM `items` WHERE `user_uuid`=? AND `updated_at` > ? ORDER BY `updated_at` DESC", &items, u.Uuid, date)
+	return items, err
 }
 
-func (u User) loadItems(limit int) ([]interface{}, error) {
-	var item = new(Item)
-	return db.Select(fmt.Sprintf("SELECT %s FROM `items` WHERE `user_uuid`=? ORDER BY `updated_at` DESC", sqlstruct.Columns(*item)), item, u.Uuid)
+func (u User) loadItems(limit int) ([]Item, error) {
+	items := []Item{}
+	err := db.Select("SELECT * FROM `items` WHERE `user_uuid`=? ORDER BY `updated_at` DESC", &items, u.Uuid)
+	return items, err
 }
 
 func (items Items) find(uuid string) Item {

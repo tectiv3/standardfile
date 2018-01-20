@@ -9,16 +9,23 @@ import (
 )
 
 var (
-	signal = flag.String("s", "", `stop — shutdown server`)
-	port   = flag.Int("p", 8888, `port to listen on`)
-	dbpath = flag.String("db", "sf.db", `db file location`)
-	debug  = flag.Bool("debug", false, `enable debug output`)
-	run    = make(chan bool)
+	signal  = flag.Bool("stop", false, `shutdown server`)
+	migrate = flag.Bool("migrate", false, `perform DB migrations`)
+	port    = flag.Int("p", 8888, `port to listen on`)
+	dbpath  = flag.String("db", "sf.db", `db file location`)
+	debug   = flag.Bool("debug", false, `enable debug output`)
+	run     = make(chan bool)
 )
 
 func main() {
 	flag.Parse()
-	daemon.AddCommand(daemon.StringFlag(signal, "stop"), syscall.SIGTERM, termHandler)
+
+	if *migrate {
+		Migrate(*dbpath)
+		return
+	}
+
+	daemon.AddCommand(daemon.BoolFlag(signal), syscall.SIGTERM, termHandler)
 
 	cntxt := &daemon.Context{
 		PidFileName: "pid",
@@ -35,6 +42,7 @@ func main() {
 		if err != nil {
 			log.Fatalln("Unable send signal to the daemon:", err)
 		}
+		log.Println("Stopping server")
 		daemon.SendCommands(d)
 		return
 	}

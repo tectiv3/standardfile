@@ -30,6 +30,7 @@ import (
 	"math/rand"
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"testing"
 )
 
@@ -294,6 +295,35 @@ func Test_IsProperSupersetConcurrent(t *testing.T) {
 	wg.Wait()
 }
 
+func Test_EachConcurrent(t *testing.T) {
+	runtime.GOMAXPROCS(2)
+	concurrent := 10
+
+	s := NewSet()
+	ints := rand.Perm(N)
+	for _, v := range ints {
+		s.Add(v)
+	}
+
+	var count int64
+	wg := new(sync.WaitGroup)
+	wg.Add(concurrent)
+	for n := 0; n < concurrent; n++ {
+		go func() {
+			defer wg.Done()
+			s.Each(func(elem interface{}) bool {
+				atomic.AddInt64(&count, 1)
+				return false
+			})
+		}()
+	}
+	wg.Wait()
+
+	if count != int64(N*concurrent) {
+		t.Errorf("%v != %v", count, int64(N*concurrent))
+	}
+}
+
 func Test_IterConcurrent(t *testing.T) {
 	runtime.GOMAXPROCS(2)
 
@@ -364,7 +394,7 @@ func Test_StringConcurrent(t *testing.T) {
 	wg.Add(len(ints))
 	for range ints {
 		go func() {
-			s.String()
+			_ = s.String()
 			wg.Done()
 		}()
 	}

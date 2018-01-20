@@ -24,6 +24,8 @@ type User struct {
 	Pw_cost     int       `json:"pw_cost"`
 	Pw_key_size int       `json:"pw_key_size"`
 	Pw_nonce    string    `json:"pw_nonce"`
+	Pw_auth     string    `json:"pw_auth"`
+	Pw_salt     string    `json:"pw_salt"`
 	Created_at  time.Time `json:"created_at"`
 	Updated_at  time.Time `json:"updated_at"`
 }
@@ -77,6 +79,10 @@ func (u *User) LoadValue(name string, value []string) {
 		u.Pw_func = value[0]
 	case "pw_alg":
 		u.Pw_alg = value[0]
+	case "pw_auth":
+		u.Pw_auth = value[0]
+	case "pw_salt":
+		u.Pw_salt = value[0]
 	case "pw_cost":
 		u.Pw_cost, _ = strconv.Atoi(value[0])
 	case "pw_key_size":
@@ -87,7 +93,7 @@ func (u *User) LoadValue(name string, value []string) {
 }
 
 //save - save current user into DB
-func (u *User) save() error {
+func (u *User) create() error {
 	if u.Uuid != "" {
 		return fmt.Errorf("Trying to save existing user")
 	}
@@ -104,7 +110,7 @@ func (u *User) save() error {
 	u.Password = Hash(u.Password)
 	u.Created_at = time.Now()
 
-	err := db.Query("INSERT INTO users (uuid, email, password, pw_func, pw_alg, pw_cost, pw_key_size, pw_nonce, created_at, updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)", u.Uuid, u.Email, u.Password, u.Pw_func, u.Pw_alg, u.Pw_cost, u.Pw_key_size, u.Pw_nonce, u.Created_at, u.Updated_at)
+	err := db.Query("INSERT INTO users (uuid, email, password, pw_func, pw_alg, pw_cost, pw_key_size, pw_nonce, pw_auth, pw_salt, created_at, updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)", u.Uuid, u.Email, u.Password, u.Pw_func, u.Pw_alg, u.Pw_cost, u.Pw_key_size, u.Pw_nonce, u.Pw_auth, u.Pw_salt, u.Created_at, u.Updated_at)
 
 	if err != nil {
 		Log(err)
@@ -141,7 +147,7 @@ func (u *User) Update(np NewPassword) error {
 
 //Register - creates user and returns token
 func (u *User) Register() (string, error) {
-	err := u.save()
+	err := u.create()
 	if err != nil {
 		return "", err
 	}
@@ -228,24 +234,31 @@ func (u *User) loadByEmailAndPassword(email, password string) {
 
 //GetParams returns auth parameters by email
 func (u User) GetParams(email string) interface{} {
-	// if u.Email != email {}
 	u.loadByEmail(email)
 
 	params := map[string]interface{}{}
-	params["pw_cost"] = u.Pw_cost
-	params["pw_alg"] = u.Pw_alg
-	params["pw_key_size"] = u.Pw_key_size
-	params["pw_func"] = u.Pw_func
-
-	var salt string
-	if u.Pw_nonce != "" {
-		salt = email + "SN" + u.Pw_nonce
-	} else {
-		salt = email + "SN" + "a04a8fe6bcb19ba61c5c0873d391e987982fbbd4"
-	}
-	params["pw_salt"] = strings.Replace(fmt.Sprintf("% x", sha1.Sum([]byte(salt))), " ", "", -1)
 	params["version"] = "001"
+	params["pw_cost"] = u.Pw_cost
+	if u.Pw_func != "" {
+		params["pw_func"] = u.Pw_func
+		params["pw_alg"] = u.Pw_alg
+		params["pw_key_size"] = u.Pw_key_size
+	}
+
+	if u.Pw_salt == "" {
+		nonce := u.Pw_nonce
+		if nonce == "" {
+			nonce = "a04a8fe6bcb19ba61c5c0873d391e987982fbbd4"
+		}
+		u.Pw_salt = getSalt(u.Email, nonce)
+	}
+	params["pw_salt"] = u.Pw_salt
+
 	return params
+}
+
+func getSalt(email, nonce string) string {
+	return strings.Replace(fmt.Sprintf("% x", sha1.Sum([]byte(email+"SN"+nonce))), " ", "", -1)
 }
 
 //Validate - validates password from jwt

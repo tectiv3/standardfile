@@ -1,16 +1,16 @@
 hash: bf9bd5cd5da5b6a0a19440357ffedad747239bd6b62bbfbab6d24dd281dc2bd7
-updated: 2017-07-06T20:32:56.931409022+03:00
+updated: 2018-01-20T12:14:15.583970119+09:00
 imports:
 - name: github.com/deckarep/golang-set
-  version: a4b9a94ae3157ef89441395f98c6ab4018fcb26a
+  version: 1d4478f51bed434f1dadf96dcd9b43aabac66795
 - name: github.com/dgrijalva/jwt-go
-  version: a539ee1a749a2b895533f979515ac7e6e0f5b650
+  version: dbeaa9332f19a944acb5736b4456cfcc02140e29
 - name: github.com/go-playground/ansi
-  version: fd5b8faa557e2cef2a634378fd623e74097adb5c
+  version: f04310fa3e7ce1a51b2fab542e0fcc5b78097e26
 - name: github.com/go-playground/form
-  version: 20d04065dbc6f79aac03bbfd49b6a9e0658f5842
+  version: 7b3f7e7430f0f1b8a744c80bb7ce6a629c65b396
 - name: github.com/go-playground/pure
-  version: 1eb11d9b1d07356311d782c51797ce0ae202b9ff
+  version: dd99f50b7780fa6a1bc49b2994ecdab7b72b1c37
   subpackages:
   - _examples/middleware/logging-recovery
 - name: github.com/kardianos/osext
@@ -18,13 +18,11 @@ imports:
 - name: github.com/kisielk/sqlstruct
   version: 648daed35d49dac24a4bff253b190a80da3ab6a5
 - name: github.com/mattn/go-sqlite3
-  version: acfa60124032040b9f5a9406f5a772ee16fe845e
+  version: 6c771bb9887719704b210e87e934f08be014bdb1
+- name: github.com/remind101/migrate
+  version: 52c1edff7319858d56cbb1954ed32d520788a164
 - name: github.com/satori/go.uuid
-  version: 5bf94b69c6b68ee1b541973bb8e1144db23a194b
+  version: 879c5887cd475cd7864858769793b2ceb0d44feb
 - name: github.com/sevlyar/go-daemon
-  version: 821596c79672d38b7923916e766363184c00079c
-- name: golang.org/x/net
-  version: 054b33e6527139ad5b1ec2f6232c3b175bd9a30c
-  subpackages:
-  - context
+  version: e49ef56654f54139c4dc0285f973f74e9649e729
 testImports: []
