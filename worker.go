@@ -25,6 +25,7 @@ func worker(port int, dbpath string) {
 	// r.DELETE("/api/items", DeleteItems)
 	r.Post("/api/auth", Registration)
 	r.Patch("/api/auth", ChangePassword)
+	r.Post("/api/auth/update", UpdateUser)
 	r.Post("/api/auth/change_pw", ChangePassword)
 	r.Post("/api/auth/sign_in", Login)
 	r.Post("/api/auth/sign_in.json", Login)

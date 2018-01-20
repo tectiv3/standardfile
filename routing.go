@@ -45,15 +45,14 @@ func authenticateUser(r *http.Request) (User, error) {
 
 	if claims, ok := token.Claims.(*UserClaims); ok && token.Valid {
 		Log("Token is valid, claims: ", claims)
-		ok = user.LoadByUUID(claims.Uuid)
-		if !ok {
+
+		if ok := user.LoadByUUID(claims.Uuid); !ok {
 			return user, fmt.Errorf("Unknown user")
 		}
 
 		if user.Validate(claims.Pw_hash) {
 			return user, nil
 		}
-		return user, fmt.Errorf("Old password used for authorisation")
 	}
 
 	return user, fmt.Errorf("Invalid token")
@@ -77,9 +76,9 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 		showError(w, err, http.StatusUnprocessableEntity)
 		return
 	}
-	Log("Request:", user)
+	Log("Request:", np)
 
-	if err := user.Update(np); err != nil {
+	if err := user.UpdatePassword(np); err != nil {
 		showError(w, err, http.StatusInternalServerError)
 		return
 	}
@@ -90,6 +89,27 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	pure.JSON(w, http.StatusAccepted, data{"token": token, "user": user.ToJSON()})
+}
+
+//UpdateUser - updates user params
+func UpdateUser(w http.ResponseWriter, r *http.Request) {
+	user, err := authenticateUser(r)
+	if err != nil {
+		showError(w, err, http.StatusUnauthorized)
+		return
+	}
+	p := Params{}
+	if err := pure.Decode(r, true, 104857600, &p); err != nil {
+		showError(w, err, http.StatusUnprocessableEntity)
+		return
+	}
+	Log("Request:", p)
+
+	if err := user.UpdateParams(p); err != nil {
+		showError(w, err, http.StatusInternalServerError)
+		return
+	}
+	pure.JSON(w, http.StatusAccepted, data{})
 }
 
 //Registration - is the registration handler
@@ -135,6 +155,7 @@ func GetParams(w http.ResponseWriter, r *http.Request) {
 	}
 	params := user.GetParams(email)
 	if _, ok := params["version"]; !ok {
+		// not in specs, required by SN
 		showError(w, fmt.Errorf("Invalid email or password"), http.StatusNotFound)
 		return
 	}

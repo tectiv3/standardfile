@@ -30,6 +30,16 @@ type User struct {
 	Updated_at  time.Time `json:"updated_at"`
 }
 
+//Params is params type
+type Params struct {
+	Pw_func     string `json:"pw_func"`
+	Pw_alg      string `json:"pw_alg"`
+	Pw_cost     int    `json:"pw_cost"`
+	Pw_key_size int    `json:"pw_key_size"`
+	Pw_salt     string `json:"pw_salt"`
+	Version     string `json:"version"`
+}
+
 //NewPassword - incomming json password change
 type NewPassword struct {
 	User
@@ -114,28 +124,41 @@ func (u *User) create() error {
 
 	if err != nil {
 		Log(err)
+	}
+
+	return err
+}
+
+//UpdatePassword - update password
+func (u *User) UpdatePassword(np NewPassword) error {
+	if u.Uuid == "" {
+		return fmt.Errorf("Unknown user")
+	}
+
+	u.Password = Hash(np.New_password)
+	u.Pw_cost = np.Pw_cost
+	u.Pw_salt = np.Pw_salt
+
+	u.Updated_at = time.Now()
+	// TODO: validate incomming pw params
+	err := db.Query("UPDATE `users` SET `password`=?, `pw_cost`=?, `pw_salt`=?, `updated_at`=? WHERE `uuid`=?", u.Password, u.Pw_cost, u.Pw_salt, u.Updated_at, u.Uuid)
+
+	if err != nil {
+		Log(err)
 		return err
 	}
 
 	return nil
 }
 
-//Update - update password
-func (u *User) Update(np NewPassword) error {
+//UpdateParams - update params
+func (u *User) UpdateParams(p Params) error {
 	if u.Uuid == "" {
 		return fmt.Errorf("Unknown user")
 	}
 
-	u.Password = Hash(np.New_password)
-	u.Pw_func = np.Pw_func
-	u.Pw_alg = np.Pw_alg
-	u.Pw_cost = np.Pw_cost
-	u.Pw_key_size = np.Pw_key_size
-	u.Pw_nonce = np.Pw_nonce
-
 	u.Updated_at = time.Now()
-	// TODO: validate incomming pw params
-	err := db.Query("UPDATE `users` SET `password`=?, `pw_func`=?, `pw_alg`=?, `pw_cost`=?, `pw_key_size`=?, `pw_nonce`=?, `updated_at`=? WHERE `uuid`=?", u.Password, u.Pw_func, u.Pw_alg, u.Pw_cost, u.Pw_key_size, u.Pw_nonce, u.Updated_at, u.Uuid)
+	err := db.Query("UPDATE `users` SET `pw_func`=?, `pw_alg`=?, `pw_cost`=?, `pw_key_size`=?, `pw_salt`=?, `updated_at`=? WHERE `uuid`=?", u.Pw_func, u.Pw_alg, u.Pw_cost, u.Pw_key_size, u.Pw_salt, time.Now(), u.Uuid)
 
 	if err != nil {
 		Log(err)
@@ -241,7 +264,7 @@ func (u User) GetParams(email string) map[string]interface{} {
 		return params
 	}
 
-	params["version"] = "001"
+	params["version"] = "002"
 	params["pw_cost"] = u.Pw_cost
 	if u.Pw_func != "" {
 		params["pw_func"] = u.Pw_func

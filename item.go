@@ -319,7 +319,7 @@ func (user User) getItems(request SyncRequest) (items Items, cursorTime time.Tim
 
 func (u User) loadItemsFromDate(date time.Time) ([]Item, error) {
 	items := []Item{}
-	err := db.Select("SELECT %s FROM `items` WHERE `user_uuid`=? AND `updated_at` >= ? ORDER BY `updated_at` DESC", &items, u.Uuid, date)
+	err := db.Select("SELECT * FROM `items` WHERE `user_uuid`=? AND `updated_at` >= ? ORDER BY `updated_at` DESC", &items, u.Uuid, date)
 	return items, err
 }
 
