@@ -51,7 +51,7 @@ func authenticateUser(r *http.Request) (User, error) {
 			return user, fmt.Errorf("Unknown user")
 		}
 
-		if user.Validate(claims.Pw_hash) {
+		if user.Validate(claims.PwHash) {
 			return user, nil
 		}
 	}

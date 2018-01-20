@@ -39,10 +39,10 @@ func getMigrations() []m.Migration {
 				db.Select("SELECT * FROM `users`", &users)
 				log.Println("Got", len(users), "users to update")
 				for _, u := range users {
-					if u.Email == "" || u.Pw_nonce == "" {
+					if u.Email == "" || u.PwNonce == "" {
 						continue
 					}
-					if _, err := tx.Exec("UPDATE `users` SET `pw_salt`=?, `updated_at`=? WHERE `uuid`=?", getSalt(u.Email, u.Pw_nonce), time.Now(), u.UUID); err != nil {
+					if _, err := tx.Exec("UPDATE `users` SET `pw_salt`=?, `updated_at`=? WHERE `uuid`=?", getSalt(u.Email, u.PwNonce), time.Now(), u.UUID); err != nil {
 						log.Println(err)
 					}
 				}

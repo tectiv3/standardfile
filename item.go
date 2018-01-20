@@ -17,15 +17,15 @@ import (
 
 // Item - is an item type
 type Item struct {
-	UUID         string    `json:"uuid"`
-	User_uuid    string    `json:"user_uuid"`
-	Content      string    `json:"content"`
-	Content_type string    `json:"content_type"`
-	Enc_item_key string    `json:"enc_item_key"`
-	Auth_hash    string    `json:"auth_hash"`
-	Deleted      bool      `json:"deleted"`
-	CreatedAt    time.Time `json:"created_at" sql:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at" sql:"updated_at"`
+	UUID        string    `json:"uuid"`
+	UserUUID    string    `json:"user_uuid"    sql:"user_uuid"`
+	Content     string    `json:"content"`
+	ContentType string    `json:"content_type" sql:"content_type"`
+	EncItemKey  string    `json:"enc_item_key" sql:"enc_item_key"`
+	AuthHash    string    `json:"auth_hash"    sql:"auth_hash"`
+	Deleted     bool      `json:"deleted"`
+	CreatedAt   time.Time `json:"created_at" sql:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at" sql:"updated_at"`
 }
 
 type it interface {
@@ -81,15 +81,15 @@ func (i *Item) LoadValue(name string, value []string) {
 	case "uuid":
 		i.UUID = value[0]
 	case "user_uuid":
-		i.User_uuid = value[0]
+		i.UserUUID = value[0]
 	case "content":
 		i.Content = value[0]
 	case "enc_item_key":
-		i.Enc_item_key = value[0]
+		i.EncItemKey = value[0]
 	case "content_type":
-		i.Content_type = value[0]
+		i.ContentType = value[0]
 	case "auth_hash":
-		i.Content_type = value[0]
+		i.ContentType = value[0]
 	case "deleted":
 		i.Deleted = (value[0] == "true")
 	}
@@ -110,13 +110,13 @@ func (i *Item) create() error {
 	i.CreatedAt = time.Now()
 	i.UpdatedAt = time.Now()
 	Log("Create:", i.UUID)
-	return db.Query("INSERT INTO `items` (`uuid`, `user_uuid`, content,  content_type, enc_item_key, auth_hash, deleted, created_at, updated_at) VALUES(?,?,?,?,?,?,?,?,?)", i.UUID, i.User_uuid, i.Content, i.Content_type, i.Enc_item_key, i.Auth_hash, i.Deleted, i.CreatedAt, i.UpdatedAt)
+	return db.Query("INSERT INTO `items` (`uuid`, `user_uuid`, content,  content_type, enc_item_key, auth_hash, deleted, created_at, updated_at) VALUES(?,?,?,?,?,?,?,?,?)", i.UUID, i.UserUUID, i.Content, i.ContentType, i.EncItemKey, i.AuthHash, i.Deleted, i.CreatedAt, i.UpdatedAt)
 }
 
 func (i *Item) update() error {
 	i.UpdatedAt = time.Now()
 	Log("Update:", i.UUID)
-	return db.Query("UPDATE `items` SET `content`=?, `enc_item_key`=?, `auth_hash`=?, `deleted`=?, `updated_at`=? WHERE `uuid`=? AND `user_uuid`=?", i.Content, i.Enc_item_key, i.Auth_hash, i.Deleted, i.UpdatedAt, i.UUID, i.User_uuid)
+	return db.Query("UPDATE `items` SET `content`=?, `enc_item_key`=?, `auth_hash`=?, `deleted`=?, `updated_at`=? WHERE `uuid`=? AND `user_uuid`=?", i.Content, i.EncItemKey, i.AuthHash, i.Deleted, i.UpdatedAt, i.UUID, i.UserUUID)
 }
 
 func (i *Item) delete() error {
@@ -124,11 +124,11 @@ func (i *Item) delete() error {
 		return fmt.Errorf("Trying to delete unexisting item")
 	}
 	i.Content = ""
-	i.Enc_item_key = ""
-	i.Auth_hash = ""
+	i.EncItemKey = ""
+	i.AuthHash = ""
 	i.UpdatedAt = time.Now()
 
-	return db.Query("UPDATE `items` SET `content`='', `enc_item_key`='', `auth_hash`='',`deleted`=1, `updated_at`=? WHERE `uuid`=? AND `user_uuid`=?", i.UpdatedAt, i.UUID, i.User_uuid)
+	return db.Query("UPDATE `items` SET `content`='', `enc_item_key`='', `auth_hash`='',`deleted`=1, `updated_at`=? WHERE `uuid`=? AND `user_uuid`=?", i.UpdatedAt, i.UUID, i.UserUUID)
 }
 
 func (i Item) copy() (Item, error) {
@@ -278,7 +278,7 @@ func (items Items) save(userUUID string) (Items, []unsaved, error) {
 
 	for _, item := range items {
 		var err error
-		item.User_uuid = userUUID
+		item.UserUUID = userUUID
 		if item.Deleted {
 			err = item.delete()
 		} else {
