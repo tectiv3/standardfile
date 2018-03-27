@@ -105,7 +105,7 @@ func (i *Item) save() error {
 
 func (i *Item) create() error {
 	if i.UUID == "" {
-		i.UUID = uuid.NewV4().String()
+		i.UUID = uuid.Must(uuid.NewV4()).String()
 	}
 	i.CreatedAt = time.Now()
 	i.UpdatedAt = time.Now()
@@ -132,7 +132,7 @@ func (i *Item) delete() error {
 }
 
 func (i Item) copy() (Item, error) {
-	i.UUID = uuid.NewV4().String()
+	i.UUID = uuid.Must(uuid.NewV4()).String()
 	i.UpdatedAt = time.Now()
 	err := i.create()
 	if err != nil {
