@@ -117,7 +117,7 @@ func (u *User) create() error {
 		return fmt.Errorf("Unable to register")
 	}
 
-	u.UUID = uuid.NewV4().String()
+	u.UUID = uuid.Must(uuid.NewV4()).String()
 	u.Password = Hash(u.Password)
 	u.CreatedAt = time.Now()
 
