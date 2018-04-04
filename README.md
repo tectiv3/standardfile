@@ -49,6 +49,16 @@ and
 ```
 default port is `8888` and database file named `sf.db` will be created in working directory
 
+#### Run the server in foreground:
+
+```
+standardfile -foreground
+```
+
+This will not daemonise the service, which might be handy if you want to handle that on some other level, like with init system, inside docker container, etc. 
+
+To stop the service, kill the process or press `ctrl-C` if running in terminal.
+
 #### Migrations
 To perform migrations run `standardfile --migrate`
 
