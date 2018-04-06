@@ -1,14 +1,14 @@
 hash: bf9bd5cd5da5b6a0a19440357ffedad747239bd6b62bbfbab6d24dd281dc2bd7
-updated: 2018-01-20T12:14:15.583970119+09:00
+updated: 2018-04-06T10:08:43.324906585+09:00
 imports:
 - name: github.com/deckarep/golang-set
-  version: 1d4478f51bed434f1dadf96dcd9b43aabac66795
+  version: b87793d5def971edc55ea88175fa32430e940e01
 - name: github.com/dgrijalva/jwt-go
-  version: dbeaa9332f19a944acb5736b4456cfcc02140e29
+  version: 06ea1031745cb8b3dab3f6a236daf2b0aa468b7e
 - name: github.com/go-playground/ansi
-  version: f04310fa3e7ce1a51b2fab542e0fcc5b78097e26
+  version: 777788a9be1a7296979a999c86b251fc777077a9
 - name: github.com/go-playground/form
-  version: 7b3f7e7430f0f1b8a744c80bb7ce6a629c65b396
+  version: 7fecd715e332ae7689c9d068b362f7db93149e60
 - name: github.com/go-playground/pure
   version: dd99f50b7780fa6a1bc49b2994ecdab7b72b1c37
   subpackages:
@@ -18,11 +18,11 @@ imports:
 - name: github.com/kisielk/sqlstruct
   version: 648daed35d49dac24a4bff253b190a80da3ab6a5
 - name: github.com/mattn/go-sqlite3
-  version: 6c771bb9887719704b210e87e934f08be014bdb1
+  version: d896508f87298565da02ed92730e7065c3de10b8
 - name: github.com/remind101/migrate
   version: 52c1edff7319858d56cbb1954ed32d520788a164
 - name: github.com/satori/go.uuid
-  version: 879c5887cd475cd7864858769793b2ceb0d44feb
+  version: 36e9d2ebbde5e3f13ab2e25625fd453271d6522e
 - name: github.com/sevlyar/go-daemon
-  version: e49ef56654f54139c4dc0285f973f74e9649e729
+  version: 32749a731f76154d29bc6a547e6585f320eb235e
 testImports: []
