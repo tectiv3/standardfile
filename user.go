@@ -265,12 +265,18 @@ func (u User) GetParams(email string) map[string]interface{} {
 		return params
 	}
 
-	params["version"] = "002"
+	params["version"] = "003"
 	params["pw_cost"] = u.PwCost
+	params["identifier"] = u.Email
+
 	if u.PwFunc != "" {
 		params["pw_func"] = u.PwFunc
 		params["pw_alg"] = u.PwAlg
 		params["pw_key_size"] = u.PwKeySize
+	}
+
+	if u.PwNonce != "" {
+		params["pw_nonce"] = u.PwNonce
 	}
 
 	if u.PwSalt == "" {

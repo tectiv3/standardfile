@@ -77,7 +77,16 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 		showError(w, err, http.StatusUnprocessableEntity)
 		return
 	}
-	Log("Request:", np)
+
+	if len(np.Password) == 0 {
+		showError(w, fmt.Errorf("Your current password is required to change your password. Please update your application if you do not see this option."), http.StatusUnauthorized)
+		return
+	}
+
+	if _, err := user.Login(np.Email, np.Password); err != nil {
+		showError(w, fmt.Errorf("The current password you entered is incorrect. Please try again."), http.StatusUnauthorized)
+		return
+	}
 
 	if err := user.UpdatePassword(np); err != nil {
 		showError(w, err, http.StatusInternalServerError)
@@ -156,7 +165,6 @@ func GetParams(w http.ResponseWriter, r *http.Request) {
 	}
 	params := user.GetParams(email)
 	if _, ok := params["version"]; !ok {
-		// not in specs, required by SN
 		showError(w, fmt.Errorf("Invalid email or password"), http.StatusNotFound)
 		return
 	}
