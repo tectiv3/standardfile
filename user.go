@@ -19,14 +19,14 @@ import (
 type User struct {
 	UUID      string    `json:"uuid"`
 	Email     string    `json:"email"`
-	Password  string    `json:"password"`
+	Password  string    `json:"password,omitempty"`
 	PwFunc    string    `json:"pw_func"     sql:"pw_func"`
 	PwAlg     string    `json:"pw_alg"      sql:"pw_alg"`
 	PwCost    int       `json:"pw_cost"     sql:"pw_cost"`
 	PwKeySize int       `json:"pw_key_size" sql:"pw_key_size"`
-	PwNonce   string    `json:"pw_nonce"    sql:"pw_nonce"`
-	PwAuth    string    `json:"pw_auth"     sql:"pw_auth"`
-	PwSalt    string    `json:"pw_salt"     sql:"pw_salt"`
+	PwNonce   string    `json:"pw_nonce,omitempty"    sql:"pw_nonce"`
+	PwAuth    string    `json:"pw_auth,omitempty"     sql:"pw_auth"`
+	PwSalt    string    `json:"pw_salt,omitempty"     sql:"pw_salt"`
 	CreatedAt time.Time `json:"created_at"  sql:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"  sql:"updated_at"`
 }
@@ -44,7 +44,8 @@ type Params struct {
 //NewPassword - incomming json password change
 type NewPassword struct {
 	User
-	NewPassword string `json:"new_password"`
+	CurrentPassword string `json:"current_password"`
+	NewPassword     string `json:"new_password"`
 }
 
 //UserClaims - jwt claims
@@ -139,10 +140,11 @@ func (u *User) UpdatePassword(np NewPassword) error {
 	u.Password = Hash(np.NewPassword)
 	u.PwCost = np.PwCost
 	u.PwSalt = np.PwSalt
+	u.PwNonce = np.PwNonce
 
 	u.UpdatedAt = time.Now()
 	// TODO: validate incomming pw params
-	err := db.Query("UPDATE `users` SET `password`=?, `pw_cost`=?, `pw_salt`=?, `updated_at`=? WHERE `uuid`=?", u.Password, u.PwCost, u.PwSalt, u.UpdatedAt, u.UUID)
+	err := db.Query("UPDATE `users` SET `password`=?, `pw_cost`=?, `pw_salt`=?, `pw_nonce`=?, `updated_at`=? WHERE `uuid`=?", u.Password, u.PwCost, u.PwSalt, u.PwNonce, u.UpdatedAt, u.UUID)
 
 	if err != nil {
 		Log(err)

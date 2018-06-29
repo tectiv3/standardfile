@@ -20,9 +20,14 @@ func Log(v ...interface{}) {
 	}
 }
 
+type sfError struct {
+	Message string `json:"message"`
+	Code    int    `json:"code"`
+}
+
 func showError(w http.ResponseWriter, err error, code int) {
 	log.Println(err)
-	pure.JSON(w, code, data{"errors": []string{err.Error()}})
+	pure.JSON(w, code, data{"error": sfError{err.Error(), code}})
 }
 
 func authenticateUser(r *http.Request) (User, error) {
@@ -78,12 +83,12 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(np.Password) == 0 {
+	if len(np.CurrentPassword) == 0 {
 		showError(w, fmt.Errorf("Your current password is required to change your password. Please update your application if you do not see this option."), http.StatusUnauthorized)
 		return
 	}
 
-	if _, err := user.Login(np.Email, np.Password); err != nil {
+	if _, err := user.Login(np.Email, np.CurrentPassword); err != nil {
 		showError(w, fmt.Errorf("The current password you entered is incorrect. Please try again."), http.StatusUnauthorized)
 		return
 	}
@@ -92,7 +97,7 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 		showError(w, err, http.StatusInternalServerError)
 		return
 	}
-	// c.Code(http.StatusNoContent).Body("") //in spec
+	// c.Code(http.StatusNoContent).Body("") //in spec, but SN requires token in return
 	token, err := user.Login(user.Email, user.Password)
 	if err != nil {
 		showError(w, err, http.StatusUnauthorized)
