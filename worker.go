@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/go-playground/pure"
 	mw "github.com/go-playground/pure/_examples/middleware/logging-recovery"
-	"github.com/go-playground/pure/middleware"
+	// "github.com/go-playground/pure/middleware"
 	"github.com/tectiv3/standardfile/db"
 	"log"
 	"net/http"
@@ -18,8 +18,9 @@ func worker(port int, dbpath string) {
 	db.Init(dbpath)
 	log.Println("Started StandardFile Server", VERSION)
 	r := pure.New()
-	r.Use(mw.LoggingAndRecovery(true), middleware.Gzip, cors)
-	r.RegisterAutomaticOPTIONS(cors)
+	r.Use(mw.LoggingAndRecovery(true))
+	// r.Use(mw.LoggingAndRecovery(true), cors)
+	// r.RegisterAutomaticOPTIONS(cors)
 
 	r.Get("/", Dashboard)
 	r.Post("/api/items/sync", SyncItems)

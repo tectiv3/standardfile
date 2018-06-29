@@ -3,3 +3,4 @@ standardfile
 *.db
 pid
 log
+dist

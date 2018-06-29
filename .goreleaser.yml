@@ -1,0 +1,26 @@
+# .goreleaser.yml
+builds:
+  - binary: standardfile
+    goos:
+      - windows
+      - darwin
+    goarch:
+      - 386
+      - amd64
+    ignore:
+      - goos: darwin
+        goarch: 386
+    env:
+      - CGO_ENABLED=0
+    hooks:
+      post: ./build-linux-cgo.sh
+release:
+  github:
+    owner: tectiv3
+    name: standardfile
+archive:
+  name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}{{ .Arm }}{{ end }}"
+  replacements:
+    amd64: 64-bit
+    386: 32-bit
+    darwin: macos
