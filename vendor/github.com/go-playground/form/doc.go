@@ -8,9 +8,12 @@ It has the following features:
     - Supports map of almost all types.
     - Supports both Numbered and Normal arrays eg. "Array[0]" and just "Array"
       with multiple values passed.
+    - Slice honours the specified index. eg. if "Slice[2]" is the only Slice
+      value passed down, it will be put at index 2; if slice isn't big enough
+      it will be expanded.
     - Array honours the specified index. eg. if "Array[2]" is the only Array
       value passed down, it will be put at index 2; if array isn't big enough
-      it will be expanded.
+      a warning will be printed and value ignored.
     - Only creates objects as necessary eg. if no `array` or `map` values are
       passed down, the `array` and `map` are left as their default values in
       the struct.
@@ -27,6 +30,9 @@ Questions
     Does it support encoding.TextUnmarshaler?
     No because TextUnmarshaler only accepts []byte but posted values can have
     multiple values, so is not suitable.
+
+	Mixing array/slice with array[idx]/slice[idx], in which order are they parsed?
+	array/slice then array[idx]/slice[idx]
 
 Supported Types
 
