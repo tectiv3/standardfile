@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"github.com/sevlyar/go-daemon"
 	"log"
 	"os"
@@ -15,14 +16,20 @@ var (
 	dbpath     = flag.String("db", "sf.db", `db file location`)
 	debug      = flag.Bool("debug", false, `enable debug output`)
 	foreground = flag.Bool("foreground", false, `run in foreground`)
+	ver        = flag.Bool("v", false, `show version`)
 	run        = make(chan bool)
 )
 
 //VERSION is server version
-const VERSION = "v0.3.0"
+const VERSION = "0.3.1"
 
 func main() {
 	flag.Parse()
+
+	if *ver {
+		fmt.Println(VERSION)
+		return
+	}
 
 	if *migrate {
 		Migrate(*dbpath)
