@@ -9,17 +9,17 @@ import (
 )
 
 var (
-	signal  = flag.Bool("stop", false, `shutdown server`)
-	migrate = flag.Bool("migrate", false, `perform DB migrations`)
-	port    = flag.Int("p", 8888, `port to listen on`)
-	dbpath  = flag.String("db", "sf.db", `db file location`)
-	debug   = flag.Bool("debug", false, `enable debug output`)
-	foreground   = flag.Bool("foreground", false, `run in foreground`)
-	run     = make(chan bool)
+	signal     = flag.Bool("stop", false, `shutdown server`)
+	migrate    = flag.Bool("migrate", false, `perform DB migrations`)
+	port       = flag.Int("p", 8888, `port to listen on`)
+	dbpath     = flag.String("db", "sf.db", `db file location`)
+	debug      = flag.Bool("debug", false, `enable debug output`)
+	foreground = flag.Bool("foreground", false, `run in foreground`)
+	run        = make(chan bool)
 )
 
 //VERSION is server version
-const VERSION = "v0.2.0"
+const VERSION = "v0.3.0"
 
 func main() {
 	flag.Parse()
