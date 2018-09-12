@@ -3,10 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/sevlyar/go-daemon"
 	"log"
 	"os"
 	"syscall"
+
+	"github.com/sevlyar/go-daemon"
 )
 
 var (
@@ -14,6 +15,7 @@ var (
 	migrate    = flag.Bool("migrate", false, `perform DB migrations`)
 	port       = flag.Int("p", 8888, `port to listen on`)
 	dbpath     = flag.String("db", "sf.db", `db file location`)
+	noreg      = flag.Bool("noreg", false, `disable registration`)
 	debug      = flag.Bool("debug", false, `enable debug output`)
 	foreground = flag.Bool("foreground", false, `run in foreground`)
 	ver        = flag.Bool("v", false, `show version`)
@@ -21,7 +23,7 @@ var (
 )
 
 //VERSION is server version
-const VERSION = "0.3.1"
+const VERSION = "0.3.2"
 
 func main() {
 	flag.Parse()
@@ -37,7 +39,7 @@ func main() {
 	}
 
 	if *foreground {
-		worker(*port, *dbpath)
+		worker(*port, *dbpath, *noreg)
 		return
 	}
 
@@ -72,7 +74,7 @@ func main() {
 	}
 	defer cntxt.Release()
 
-	go worker(*port, *dbpath)
+	go worker(*port, *dbpath, *noreg)
 
 	if err := daemon.ServeSignals(); err != nil {
 		log.Println("Error:", err)
