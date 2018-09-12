@@ -4,14 +4,15 @@ import (
 	"github.com/go-playground/pure"
 	mw "github.com/go-playground/pure/_examples/middleware/logging-recovery"
 	// "github.com/go-playground/pure/middleware"
-	"github.com/tectiv3/standardfile/db"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
+
+	"github.com/tectiv3/standardfile/db"
 )
 
-func worker(port int, dbpath string) {
+func worker(port int, dbpath string, noreg bool) {
 	if port == 0 {
 		port = 8888
 	}
@@ -26,7 +27,9 @@ func worker(port int, dbpath string) {
 	r.Post("/api/items/sync", SyncItems)
 	r.Post("/api/items/backup", BackupItems)
 	// r.DELETE("/api/items", DeleteItems)
-	r.Post("/api/auth", Registration)
+	if !noreg {
+		r.Post("/api/auth", Registration)
+	}
 	r.Patch("/api/auth", ChangePassword)
 	r.Post("/api/auth/update", UpdateUser)
 	r.Post("/api/auth/change_pw", ChangePassword)

@@ -60,9 +60,13 @@ This will not daemonise the service, which might be handy if you want to handle 
 To stop the service, kill the process or press `ctrl-C` if running in terminal.
 
 #### Migrations
-To perform migrations run `standardfile --migrate`
+To perform migrations run `standardfile -migrate`
 
 _Perform migration upon updating to v0.2.0_
+
+#### Disable registration
+To disable registration run with `standardfile -noreg`
+
 
 ### Deploying to a live server
 I suggest putting it behind nginx with https enabled location
