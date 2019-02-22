@@ -182,7 +182,7 @@ func GetTimeFromToken(token string) time.Time {
 		return time.Now()
 	}
 	parts := strings.Split(string(decoded), ":")
-	str, err := strconv.Atoi(parts[1])
+	str, err := strconv.ParseUint(parts[1], 10, 64)
 	if err != nil {
 		Log(err)
 		return time.Now()
