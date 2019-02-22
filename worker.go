@@ -12,16 +12,19 @@ import (
 	"github.com/tectiv3/standardfile/db"
 )
 
-func worker(port int, dbpath string, noreg bool) {
+func worker(port int, dbpath string, noreg bool, usecors bool) {
 	if port == 0 {
 		port = 8888
 	}
 	db.Init(dbpath)
 	log.Println("Started StandardFile Server", VERSION)
 	r := pure.New()
-	r.Use(mw.LoggingAndRecovery(true))
-	// r.Use(mw.LoggingAndRecovery(true), cors)
-	// r.RegisterAutomaticOPTIONS(cors)
+	if usecors {
+		r.Use(mw.LoggingAndRecovery(true), cors)
+		r.RegisterAutomaticOPTIONS(cors)
+	} else {
+		r.Use(mw.LoggingAndRecovery(true))
+	}
 
 	r.Get("/", Dashboard)
 	r.Post("/api/items/sync", SyncItems)
@@ -53,9 +56,11 @@ func listen(r *pure.Mux, port int) {
 
 func cors(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "https://app.standardnotes.org")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "authorization,content-type")
+		if origin := r.Header.Get("Origin"); origin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "authorization,content-type")
+		}
 		next(w, r)
 	}
 }

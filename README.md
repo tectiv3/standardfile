@@ -50,6 +50,7 @@ and
 default port is `8888` and database file named `sf.db` will be created in working directory
 
 #### Run the server in foreground:
+- useful when running as systemd service.
 
 ```
 standardfile -foreground
@@ -67,9 +68,11 @@ _Perform migration upon updating to v0.2.0_
 #### Disable registration
 To disable registration run with `standardfile -noreg`
 
+#### Handle CORS automatically
+Run with -cors flag to enable automatic cors handling (needed for standardnotes app for example).
 
 ### Deploying to a live server
-I suggest putting it behind nginx with https enabled location
+I suggest putting it behind nginx or caddy with https enabled location
 ```
 server {
     server_name sf.example.com;
@@ -85,7 +88,7 @@ server {
     ssl_certificate_key /etc/letsencrypt/live/sf.example.com/privkey.pem;
 
     include snippets/ssl-params.conf;
-	
+
     location / {
 	add_header Access-Control-Allow-Origin '*' always;
 	add_header Access-Control-Allow-Credentials true always;

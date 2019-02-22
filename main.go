@@ -18,12 +18,13 @@ var (
 	noreg      = flag.Bool("noreg", false, `disable registration`)
 	debug      = flag.Bool("debug", false, `enable debug output`)
 	foreground = flag.Bool("foreground", false, `run in foreground`)
+	usecors    = flag.Bool("cors", false, `handle cors automatically`)
 	ver        = flag.Bool("v", false, `show version`)
 	run        = make(chan bool)
 )
 
 //VERSION is server version
-const VERSION = "0.3.2"
+const VERSION = "0.3.3"
 
 func main() {
 	flag.Parse()
@@ -39,7 +40,7 @@ func main() {
 	}
 
 	if *foreground {
-		worker(*port, *dbpath, *noreg)
+		worker(*port, *dbpath, *noreg, *usecors)
 		return
 	}
 
@@ -74,7 +75,7 @@ func main() {
 	}
 	defer cntxt.Release()
 
-	go worker(*port, *dbpath, *noreg)
+	go worker(*port, *dbpath, *noreg, *usecors)
 
 	if err := daemon.ServeSignals(); err != nil {
 		log.Println("Error:", err)
