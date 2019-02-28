@@ -1,29 +1,22 @@
 #!/usr/bin/env bash
+export GO111MODULE=on
 
-go build
+VERSION=$(git describe --tags)
+BUILD_TIME=`date +%FT%T%z`
 
-version=$(./standardfile -v)
+xgo -ldflags="-w -X main.BuildTime=$BUILD_TIME -X main.Version=$VERSION" --targets="linux/386,linux/amd64,linux/arm-6,linux/arm-7,linux/arm64" .
 
-xgo -ldflags="-w" --targets="linux/386,linux/amd64,linux/arm-6,linux/arm-7,linux/arm64" .
+mkdir dist/linux_386
+mv standardfile-linux-386 dist/linux_386/standardfile
 
-mv standardfile-linux-386 standardfile
-tar czf standardfile_${version}_linux_32-bit.tar.gz standardfile
-rm -f standardfile
+mkdir dist/linux_amd64
+mv standardfile-linux-amd64 dist/linux_amd64/standardfile
 
-mv standardfile-linux-amd64 standardfile
-tar czf standardfile_${version}_linux_64-bit.tar.gz standardfile
-rm -f standardfile
+mkdir dist/linux_arm6
+mv standardfile-linux-arm-6 dist/linux_arm6/standardfile
 
-mv standardfile-linux-arm-6 standardfile
-tar czf standardfile_${version}_linux_arm6.tar.gz standardfile
-rm -f standardfile
+mkdir dist/linux_arm7
+mv standardfile-linux-arm-7 dist/linux_arm7/standardfile
 
-mv standardfile-linux-arm-7 standardfile
-tar czf standardfile_${version}_linux_arm7.tar.gz standardfile
-rm -f standardfile
-
-mv standardfile-linux-arm64 standardfile
-tar czf standardfile_${version}_linux_arm8.tar.gz standardfile
-rm -f standardfile
-
-mv standardfile_${version}* dist/
+mkdir dist/linux_arm8
+mv standardfile-linux-arm64 dist/linux_arm8/standardfile
