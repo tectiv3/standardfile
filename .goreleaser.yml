@@ -1,6 +1,8 @@
 # .goreleaser.yml
 builds:
   - binary: standardfile
+    ldflags:
+      - -w -X main.BuildTime={{ .Date }} -X main.Version={{ .Version }}
     goos:
       - windows
       - darwin
@@ -13,7 +15,7 @@ builds:
     env:
       - CGO_ENABLED=0
     hooks:
-      post: ./build-linux-cgo.sh
+      pre: ./build-linux-cgo.sh
 release:
   github:
     owner: tectiv3

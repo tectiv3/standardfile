@@ -1,0 +1,9 @@
+{
+    "port": 8888,
+    "foreground": true,
+    "debug": false,
+    "socket": "",
+    "noreg": false,
+    "cors": false,
+    "db": "sf.db"
+}
