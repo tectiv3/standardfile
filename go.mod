@@ -5,12 +5,12 @@ go 1.12
 require (
 	github.com/deckarep/golang-set v1.7.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/go-playground/ansi v2.1.0+incompatible
-	github.com/go-playground/form v3.1.4+incompatible
+	github.com/go-playground/ansi v2.1.0+incompatible // indirect
+	github.com/go-playground/form v3.1.4+incompatible // indirect
 	github.com/go-playground/pure v0.0.0-20170911042516-dd99f50b7780
 	github.com/go-yaml/yaml v2.1.0+incompatible // indirect
 	github.com/heetch/confita v0.5.1
-	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0
+	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/kisielk/sqlstruct v0.0.0-20150923205031-648daed35d49
 	github.com/mattn/go-sqlite3 v1.10.0
 	github.com/pkg/errors v0.8.1 // indirect
