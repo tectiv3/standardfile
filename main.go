@@ -1,46 +1,94 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 	"syscall"
 
 	"github.com/sevlyar/go-daemon"
+
+	"github.com/heetch/confita"
+	"github.com/heetch/confita/backend"
+	"github.com/heetch/confita/backend/file"
+	"github.com/heetch/confita/backend/flags"
 )
+
+type Config struct {
+	DB         string `config:"db"`
+	Port       int    `config:"port"`
+	Socket     string `config:"socket"`
+	NoReg      bool   `config:"noreg"`
+	Debug      bool   `config:"debug"`
+	Foreground bool   `config:"foreground"`
+	UseCORS    bool   `config:"cors"`
+}
+
+var cfg = Config{
+	DB:         "sf.db",
+	Port:       8888,
+	Debug:      false,
+	NoReg:      false,
+	Foreground: false,
+	UseCORS:    false,
+}
 
 var (
-	signal     = flag.Bool("stop", false, `shutdown server`)
-	migrate    = flag.Bool("migrate", false, `perform DB migrations`)
-	port       = flag.Int("p", 8888, `port to listen on`)
-	dbpath     = flag.String("db", "sf.db", `db file location`)
-	noreg      = flag.Bool("noreg", false, `disable registration`)
-	debug      = flag.Bool("debug", false, `enable debug output`)
-	foreground = flag.Bool("foreground", false, `run in foreground`)
-	usecors    = flag.Bool("cors", false, `handle cors automatically`)
-	ver        = flag.Bool("v", false, `show version`)
-	run        = make(chan bool)
+	signal  = flag.Bool("stop", false, `shutdown server`)
+	migrate = flag.Bool("migrate", false, `perform DB migrations`)
+	ver     = flag.Bool("v", false, `show version`)
+	run     = make(chan bool)
 )
 
-//VERSION is server version
-const VERSION = "0.3.3"
+// Version string will be set by linker
+var Version = "dev"
+
+// BuildTime string will be set by linker
+var BuildTime = ""
+
+func init() {
+	confBackends := []backend.Backend{}
+
+	configs := []string{"standardfile.json", "standardfile.toml", "standardfile.yaml"}
+	for _, c := range configs {
+		if _, err := os.Stat(c); err == nil {
+			confBackends = append(confBackends, file.NewBackend(c))
+		}
+	}
+	confBackends = append(confBackends, flags.NewBackend())
+	loader := confita.NewLoader(confBackends...)
+	err := loader.Load(context.Background(), &cfg)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
 
 func main() {
 	flag.Parse()
 
 	if *ver {
-		fmt.Println(VERSION)
+		fmt.Println(`        Version:         ` + Version + `
+        Built:           ` + BuildTime + `
+        Go version:      ` + runtime.Version() + `
+        OS/Arch:         ` + runtime.GOOS + "/" + runtime.GOARCH)
+
 		return
 	}
 
 	if *migrate {
-		Migrate(*dbpath)
+		Migrate()
 		return
 	}
 
-	if *foreground {
-		worker(*port, *dbpath, *noreg, *usecors)
+	if cfg.Port == 0 {
+		cfg.Port = 8888
+	}
+
+	if cfg.Foreground {
+		worker()
 		return
 	}
 
@@ -75,7 +123,7 @@ func main() {
 	}
 	defer cntxt.Release()
 
-	go worker(*port, *dbpath, *noreg, *usecors)
+	go worker()
 
 	if err := daemon.ServeSignals(); err != nil {
 		log.Println("Error:", err)

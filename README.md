@@ -39,15 +39,19 @@ standardfile -stop
 ```
 ### Configuration options
 
+- starting from 0.4.0 server can use json,toml or yaml configuration file, example standardfile.json provided in this repo
+
 #### Customize port and database location
 ```
--p 8080
+--port 8080
 ```
 and
 ```
--db /var/lib/sf.db
+--db /var/lib/sf.db
 ```
 default port is `8888` and database file named `sf.db` will be created in working directory
+
+- with --socket option you can set server to listen on unix socket
 
 #### Run the server in foreground:
 - useful when running as systemd service.

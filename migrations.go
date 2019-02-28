@@ -2,15 +2,16 @@ package main
 
 import (
 	"database/sql"
-	m "github.com/remind101/migrate"
-	"github.com/tectiv3/standardfile/db"
 	"log"
 	"time"
+
+	m "github.com/remind101/migrate"
+	"github.com/tectiv3/standardfile/db"
 )
 
 //Migrate performs migration
-func Migrate(dbpath string) {
-	db.Init(dbpath)
+func Migrate() {
+	db.Init(cfg.DB)
 	migrations := getMigrations()
 	err := m.Exec(db.DB(), m.Up, migrations...)
 	if err != nil {

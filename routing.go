@@ -15,7 +15,7 @@ type data map[string]interface{}
 
 //Log writes in log if debug flag is set
 func Log(v ...interface{}) {
-	if *debug {
+	if cfg.Debug {
 		log.Println(v...)
 	}
 }
@@ -67,7 +67,7 @@ func authenticateUser(r *http.Request) (User, error) {
 //Dashboard - is the root handler
 func Dashboard(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Dashboard. Server version: " + VERSION))
+	w.Write([]byte("Dashboard. Server version: " + Version))
 }
 
 //ChangePassword - is the change password handler
