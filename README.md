@@ -76,7 +76,8 @@ To disable registration run with `standardfile -noreg`
 Run with -cors flag to enable automatic cors handling (needed for standardnotes app for example).
 
 ### Deploying to a live server
-I suggest putting it behind nginx or caddy with https enabled location
+I suggest putting it behind nginx or [caddy](https://caddyserver.com/) with https enabled location.
+- nginx sample config
 ```
 server {
     server_name sf.example.com;
@@ -114,6 +115,17 @@ server {
     }
 }
 ```
+- caddy sample config
+```
+sf.example.com {
+    gzip
+
+    proxy / localhost:8888 {
+        transparent
+    }
+}
+```
+
 ### Optional Environment variables
 
 **SECRET_KEY_BASE**
