@@ -7,7 +7,8 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-playground/ansi v2.1.0+incompatible
 	github.com/go-playground/form v3.1.4+incompatible
-	github.com/go-playground/pure v0.0.0-20170911042516-dd99f50b7780
+	github.com/go-playground/pkg v0.0.0-20190513234448-af45a46936e9
+	github.com/go-playground/pure v0.0.0-20190513234712-ab95fef1be7a
 	github.com/go-yaml/yaml v2.1.0+incompatible // indirect
 	github.com/heetch/confita v0.5.1
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0

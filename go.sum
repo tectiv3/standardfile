@@ -8,8 +8,12 @@ github.com/go-playground/ansi v2.1.0+incompatible/go.mod h1:OCdnfTFO/GfFtp+ktUt+
 github.com/go-playground/form v3.1.3+incompatible/go.mod h1:lhcKXfTuhRtIZCIKUeJ0b5F207aeQCPbZU09ScKjwWg=
 github.com/go-playground/form v3.1.4+incompatible h1:lvKiHVxE2WvzDIoyMnWcjyiBxKt2+uFJyZcPYWsLnjI=
 github.com/go-playground/form v3.1.4+incompatible/go.mod h1:lhcKXfTuhRtIZCIKUeJ0b5F207aeQCPbZU09ScKjwWg=
+github.com/go-playground/pkg v0.0.0-20190513234448-af45a46936e9 h1:SMJgXE/ouCVX21NWAS6yfOmwPn8HvT1Ty4UAGWGr60w=
+github.com/go-playground/pkg v0.0.0-20190513234448-af45a46936e9/go.mod h1:Wg1j+HqWLhhVIfYdaoOuBzdutBEVcqwvBxgFZRWbybk=
 github.com/go-playground/pure v0.0.0-20170911042516-dd99f50b7780 h1:kzaiRTGY77jL8Pqvz3igYWdPPJBQmg7Iky6ytb3lYsc=
 github.com/go-playground/pure v0.0.0-20170911042516-dd99f50b7780/go.mod h1:k2eRJXw80qTBI0vn3rVf3CcZRLtdbPb0FPV7sDZGk5o=
+github.com/go-playground/pure v0.0.0-20190513234712-ab95fef1be7a h1:XORSaodaHB435EPTVxDH/pMbhib/OOSSGaN40XNejc4=
+github.com/go-playground/pure v0.0.0-20190513234712-ab95fef1be7a/go.mod h1:nTRC3AHigULLGsWAUFOVWQsXvK+1G+zyb6MfAmi3Fmw=
 github.com/go-yaml/yaml v2.1.0+incompatible h1:RYi2hDdss1u4YE7GwixGzWwVo47T8UQwnTLB6vQiq+o=
 github.com/go-yaml/yaml v2.1.0+incompatible/go.mod h1:w2MrLa16VYP0jy6N7M5kHaCkaLENm+P+Tv+MfurjSw0=
 github.com/heetch/confita v0.5.1 h1:EiE32j+Ze0sI0YBeJDSdqTZ32uKz2XCTQIzSgwgfnvk=
@@ -30,3 +34,4 @@ github.com/satori/go.uuid v0.0.0-20180103174451-36e9d2ebbde5 h1:tfcGHuraNSEY9xRb
 github.com/satori/go.uuid v0.0.0-20180103174451-36e9d2ebbde5/go.mod h1:dA0hQrYB0VpLJoorglMZABFdXlWrHn1NEOzdhQKdks0=
 github.com/sevlyar/go-daemon v0.1.4 h1:Ayxp/9SNHwPBjV+kKbnHl2ch6rhxTu08jfkGkoxgULQ=
 github.com/sevlyar/go-daemon v0.1.4/go.mod h1:6dJpPatBT9eUwM5VCw9Bt6CdX9Tk6UWvhW3MebLDRKE=
+gopkg.in/go-playground/assert.v1 v1.2.1/go.mod h1:9RXL0bg/zibRAgZUYszZSwO/z8Y/a8bDuhia5mkpMnE=
