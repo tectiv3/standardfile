@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"strconv"
 	"syscall"
 
 	"github.com/sevlyar/go-daemon"
@@ -24,7 +25,7 @@ type Config struct {
 	NoReg      bool   `config:"noreg"`
 	Debug      bool   `config:"debug"`
 	Foreground bool   `config:"foreground"`
-	UseCORS    bool   `config:"cors"`
+	UseCORS    bool   `config:"cors" json:"cors" yaml:"cors" toml:"cors"`
 }
 
 var cfg = Config{
@@ -70,11 +71,17 @@ func main() {
 	flag.Parse()
 
 	if *ver {
-		fmt.Println(`        Version:         ` + Version + `
-        Built:           ` + BuildTime + `
-        Go version:      ` + runtime.Version() + `
-        OS/Arch:         ` + runtime.GOOS + "/" + runtime.GOARCH)
-
+		fmt.Println(`        Version:           ` + Version + `
+        Built:             ` + BuildTime + `
+        Go Version:        ` + runtime.Version() + `
+        OS/Arch:           ` + runtime.GOOS + "/" + runtime.GOARCH + `
+        No Registrations:  ` + strconv.FormatBool(cfg.NoReg) + `
+        CORS Enabled:      ` + strconv.FormatBool(cfg.UseCORS) + `
+        Run in Foreground: ` + strconv.FormatBool(cfg.Foreground) + `
+        Webserver Port:    ` + strconv.Itoa(cfg.Port) + `
+        CORS Enabled:      ` + strconv.FormatBool(cfg.UseCORS) + `
+        DB Path:           ` + cfg.DB + `
+        Debug:             ` + strconv.FormatBool(cfg.Debug))
 		return
 	}
 
