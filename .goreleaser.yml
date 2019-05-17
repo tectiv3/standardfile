@@ -19,7 +19,7 @@ builds:
     env:
       - CGO_ENABLED=0
     hooks:
-      pre: ./build-linux-cgo.sh
+      post: ./build-linux-cgo.sh
 release:
   github:
     owner: tectiv3
