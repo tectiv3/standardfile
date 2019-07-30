@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	jwt "github.com/dgrijalva/jwt-go"
+	httpext "github.com/go-playground/pkg/net/http"
 	"github.com/go-playground/pure"
 )
 
@@ -78,7 +79,7 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	np := NewPassword{}
-	if err := pure.Decode(r, true, 104857600, &np); err != nil {
+	if err := pure.Decode(r, httpext.QueryParams, 104857600, &np); err != nil {
 		showError(w, err, http.StatusUnprocessableEntity)
 		return
 	}
@@ -114,7 +115,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	p := Params{}
-	if err := pure.Decode(r, true, 104857600, &p); err != nil {
+	if err := pure.Decode(r, httpext.QueryParams, 104857600, &p); err != nil {
 		showError(w, err, http.StatusUnprocessableEntity)
 		return
 	}
@@ -130,7 +131,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 //Registration - is the registration handler
 func Registration(w http.ResponseWriter, r *http.Request) {
 	var user = NewUser()
-	if err := pure.Decode(r, true, 104857600, &user); err != nil {
+	if err := pure.Decode(r, httpext.QueryParams, 104857600, &user); err != nil {
 		showError(w, err, http.StatusUnprocessableEntity)
 		return
 	}
@@ -146,7 +147,7 @@ func Registration(w http.ResponseWriter, r *http.Request) {
 //Login - is the login handler
 func Login(w http.ResponseWriter, r *http.Request) {
 	var user = NewUser()
-	if err := pure.Decode(r, true, 104857600, &user); err != nil {
+	if err := pure.Decode(r, httpext.QueryParams, 104857600, &user); err != nil {
 		showError(w, err, http.StatusUnprocessableEntity)
 		return
 	}
@@ -186,7 +187,7 @@ func SyncItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var request SyncRequest
-	if err := pure.Decode(r, true, 104857600, &request); err != nil {
+	if err := pure.Decode(r, httpext.QueryParams, 104857600, &request); err != nil {
 		showError(w, err, http.StatusUnprocessableEntity)
 		return
 	}
