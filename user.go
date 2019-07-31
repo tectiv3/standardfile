@@ -69,7 +69,7 @@ func init() {
 //NewUser - user constructor
 func NewUser() User {
 	user := User{}
-	user.PwCost = 5000
+	user.PwCost = 100000
 	user.PwAlg = "sha512"
 	user.PwKeySize = 512
 	user.PwFunc = "pbkdf2"
