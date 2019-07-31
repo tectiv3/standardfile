@@ -1,6 +1,6 @@
 # build stage
-FROM alpine:3.10 AS build-env
-RUN apk update && apk add --update go=1.12.6-r0 gcc=8.3.0-r0 g++=8.3.0-r0 git=2.22.0-r0
+FROM golang:1.12.7-alpine3.10 AS build-env
+RUN apk update && apk add gcc=8.3.0-r0 g++=8.3.0-r0 git=2.22.0-r0
 WORKDIR /src
 COPY . . 
 RUN go mod download
