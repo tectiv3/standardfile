@@ -1,9 +1,9 @@
 {
     "port": 8888,
     "foreground": true,
-    "debug": true,
+    "debug": false,
     "socket": "",
-    "noreg": true,
+    "noreg": false,
     "cors": false,
-    "db": "/stdfile/db/sf.db"
+    "db": "sf.db"
 }
