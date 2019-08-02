@@ -37,6 +37,31 @@ standardfile
 ```
 standardfile -stop
 ```
+
+**Docker Instructions**
+
+```
+docker run -d -p 8888:8888 dmaciel/standardfile:latest
+```
+
+This will lost your data when the container is destroyed or updated, so the
+recommended way is to create a local folder and mount it inside the container
+
+```
+mkdir ${HOME}/.sf
+docker run -d -v ${HOME}/.sf:/stdfile/db -p 8888:8888 dmaciel/standardfile:latest
+```
+
+This way the data will be keep between container updates
+
+Also, it is possible to change config values on runtime, all config values can be
+overwritten trough ENV vars, The ENV vars use the same names on the `standardfile.json`
+file in uppercase
+
+```
+Docker run -d -e NOREG=true -v ${HOME}/.sf:/stdfile/db/ -p 8888:8888 dmaciel/standardfile:latest
+```
+
 ### Configuration options
 
 - starting from 0.4.0 server can use json,toml or yaml configuration file, example standardfile.json provided in this repo
@@ -60,7 +85,7 @@ default port is `8888` and database file named `sf.db` will be created in workin
 standardfile -foreground
 ```
 
-This will not daemonise the service, which might be handy if you want to handle that on some other level, like with init system, inside docker container, etc. 
+This will not daemonise the service, which might be handy if you want to handle that on some other level, like with init system, inside docker container, etc.
 
 To stop the service, kill the process or press `ctrl-C` if running in terminal.
 
