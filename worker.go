@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-playground/pure"
 	mw "github.com/go-playground/pure/_examples/middleware/logging-recovery"
+
 	// "github.com/go-playground/pure/middleware"
 	"log"
 	"net/http"
@@ -17,6 +18,8 @@ import (
 func worker() {
 	db.Init(cfg.DB)
 	log.Println("Started StandardFile Server", Version)
+	log.Println("Loaded config:", loadedConfig)
+
 	if cfg.Debug {
 		log.Println("Debug on")
 	}

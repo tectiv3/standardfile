@@ -1,0 +1,10 @@
+version: "3"
+services:
+    stdfile:
+        image: tectiv3/standardfile:latest
+        container_name: standardfile
+        restart: always
+        volumes:
+            - .:/data/
+        ports:
+            - "8888:8888"
