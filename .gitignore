@@ -6,3 +6,4 @@ log
 dist
 standardfile.exe
 vendor
+.vscode/launch.json

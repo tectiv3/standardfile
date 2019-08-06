@@ -1,7 +1,6 @@
 # .goreleaser.yml
 before:
   hooks:
-    # you may remove this if you don't use vgo
     - go mod download
 builds:
   - binary: standardfile
